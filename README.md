@@ -42,7 +42,7 @@ npm run test:e2e
 3. Open a merchant or go directly to `#/client/qr`.
 4. Simulate a QR scan: the visit adds 50 Points locaux and one merchant stamp.
 5. Publish the prefilled verified review.
-6. Observe the Guide du centre badge, the level change to Légende locale and the unlocked reward.
+6. Observe the Local Hero stamp, the level change to Légende locale and the unlocked reward.
 7. Continue to the reward or return to discovery.
 
 The demo distinguishes lifetime progression (`points`) from the spendable reward balance (`balance`). Reward redemption never decreases lifetime progression.

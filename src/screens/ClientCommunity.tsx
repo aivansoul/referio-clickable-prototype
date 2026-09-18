@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
-import { Button, Chip, Field, MerchantCard, PageTitle, PointsCard, SectionHeading } from '../components/ui'
+import { Badge, Button, Chip, Field, MerchantCard, PageTitle, PointsCard, SectionHeading, StampBadge } from '../components/ui'
 import { categories, merchants } from '../data/demo'
 import { useDemo } from '../state/DemoContext'
 import { motionTransition } from '../motion'
@@ -53,9 +53,9 @@ export function ReviewSuccessScreen() {
   const reduced = useReducedMotion()
   return (
     <AppShell tone="forest">
-      <PageTitle eyebrow="AVIS PUBLIÉ" title="Ton expérience aide tout le quartier." body="Le badge Guide du centre vient d’être ajouté à ton profil." inverse />
+      <PageTitle eyebrow="AVIS PUBLIÉ" title="Ton expérience aide tout le quartier." body="Le timbre Local Hero vient d’être ajouté à ton profil." inverse />
       <motion.section className="level-up" initial={reduced ? false : { opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={reduced ? { duration: 0 } : motionTransition.slow}>
-        <span className="badge-seal">GUIDE<br />LOCAL</span><p>NOUVEAU BADGE</p><h2>Guide du centre</h2><strong>{state.level}</strong><small>{state.points.toLocaleString('fr-BE')} points locaux cumulés</small>
+        <StampBadge name="localHero" /><Badge variant="verified" /><p>NOUVEAU TIMBRE</p><h2>Local Hero</h2><strong>{state.level}</strong><small>{state.points.toLocaleString('fr-BE')} points locaux cumulés</small>
       </motion.section>
       <div className="screen-spacer" />
       <Button full onClick={() => navigate('/client/rewards')}>Voir ma récompense</Button>
@@ -71,18 +71,25 @@ export function ProfileScreen() {
   return (
     <AppShell tone={dark ? 'forest' : 'light'} bottomNav>
       <div className={`profile-page${dark ? ' profile-page--dark' : ''}`}>
-        <button className="theme-toggle" type="button" aria-pressed={dark} onClick={() => setDark(!dark)}>{dark ? 'Version claire' : 'Version sombre'}</button>
-        <img className="profile-avatar" src={asset('profile-avatar.png')} alt="Portrait de Lana Totolina" />
-        <h1>Lana Totolina</h1><p>Charleroi · Membre depuis 2026</p>
-        <PointsCard points={state.points} level={state.level} />
-        <div className="profile-stats"><div><strong>28</strong><span>recommandations</span></div><div><strong>96</strong><span>avis vérifiés</span></div><div><strong>12</strong><span>badges</span></div></div>
-        <SectionHeading title="Ton impact local" />
-        <div className="impact-card"><strong>3 420 €</strong><span>orientés vers des commerces locaux</span><p>Estimation de démonstration, non financière.</p></div>
-        <SectionHeading title="Dernières découvertes" action="Voir les favoris" to="/client/favorites" />
-        <div className="discovery-grid">{['discovery-1.jpg', 'discovery-2.png', 'discovery-3.png', 'discovery-4.png'].map((image) => <img src={asset(image)} alt="Découverte locale" key={image} />)}</div>
-        {shared && <p className="inline-success" role="status">Lien de profil copié pour la démonstration.</p>}
-        <Button full variant={dark ? 'primary' : 'secondary'} onClick={() => setShared(true)}>Partager mon profil</Button>
-        <Link className="button button--ghost button--full" to="/client/settings">Paramètres</Link>
+        <section className="profile-identity">
+          <button className="theme-toggle" type="button" aria-pressed={dark} onClick={() => setDark(!dark)}>{dark ? 'Version claire' : 'Version sombre'}</button>
+          <img className="profile-avatar" src={asset('profile-avatar.png')} alt="Portrait de Lana Totolina" />
+          <h1>Lana Totolina</h1><p>Charleroi · Membre depuis 2026</p>
+          <Badge variant="level" />
+          <PointsCard points={state.points} level={state.level} />
+        </section>
+        <section className="profile-dashboard">
+          <div className="profile-stats"><div><strong>42</strong><span>commerces soutenus</span></div><div><strong>6</strong><span>quartiers explorés</span></div><div><strong>18</strong><span>amis inspirés</span></div></div>
+          <SectionHeading title="Mes timbres" action="Voir les challenges" to="/client/challenges" />
+          <div className="profile-stamps"><StampBadge name="curieux" /><StampBadge name="explorateur" /><StampBadge name="insider" /><StampBadge name="localHero" locked={!state.badgeUnlocked} /><StampBadge name="legendeLocale" locked /><StampBadge name="premiereVisite" /><StampBadge name="avisVerifie" /><StampBadge name="serieLocale" /><StampBadge name="ambassadeur" locked /><StampBadge name="fideliteComplete" locked /></div>
+          <SectionHeading title="Ton impact local" />
+          <div className="impact-card"><div><strong>3 420 €</strong><span>orientés vers des commerces locaux</span><p>Estimation de démonstration, non financière.</p></div><img src={asset('mascot.png')} alt="Mascotte Referio" /></div>
+          <SectionHeading title="Dernières découvertes" action="Voir les favoris" to="/client/favorites" />
+          <div className="discovery-grid">{['discovery-1.jpg', 'discovery-2.png', 'discovery-3.png', 'discovery-4.png'].map((image) => <img src={asset(image)} alt="Découverte locale" key={image} />)}</div>
+          {shared && <p className="inline-success" role="status">Lien de profil copié pour la démonstration.</p>}
+          <Button full variant={dark ? 'primary' : 'secondary'} onClick={() => setShared(true)}>Partager mon profil</Button>
+          <Link className="button button--ghost button--full" to="/client/settings">Paramètres</Link>
+        </section>
       </div>
     </AppShell>
   )
@@ -91,16 +98,16 @@ export function ProfileScreen() {
 export function RankingScreen() {
   const { state } = useDemo()
   const people = [
-    ['2', 'Maya', 'rank-1.png', '1 890'],
-    ['1', 'Nicolas', 'rank-2.png', '2 140'],
-    ['3', 'Samir', 'rank-3.png', '1 720'],
+    ['2', 'Karim B.', 'rank-1.png', '2 140'],
+    ['1', 'Lana T.', 'rank-2.png', '2 310'],
+    ['3', 'Sophie D.', 'rank-3.png', '1 985'],
   ]
   return (
     <AppShell tone="lavender" bottomNav>
       <PageTitle eyebrow="CHARLEROI" title="Classement local" body="Ce mois-ci · Entre amis et habitants actifs." />
       <div className="chip-row"><Chip active>Charleroi</Chip><Chip>Amis</Chip><Chip>Ce mois</Chip></div>
       <div className="podium">{people.map(([rank, name, avatar, points]) => <div className={`podium__person podium__person--${rank}`} key={name}><span>{rank}</span><img src={asset(avatar)} alt={`Portrait de ${name}`} /><strong>{name}</strong><small>{points} pts</small></div>)}</div>
-      <div className="ranking-list"><div className="ranking-row is-me"><span>8</span><img src={asset('rank-lana.png')} alt="Portrait de Lana" /><strong>Toi · Lana</strong><b>{state.points.toLocaleString('fr-BE')} pts</b></div>{[['9', 'Amélie', '1 190'], ['10', 'Jules', '1 150'], ['11', 'Zoé', '1 090']].map(([rank, name, points]) => <div className="ranking-row" key={name}><span>{rank}</span><i>{name[0]}</i><strong>{name}</strong><b>{points} pts</b></div>)}</div>
+      <div className="ranking-list">{[['4', 'Amélie R.', '1 820'], ['5', 'Jules M.', '1 760'], ['6', 'Zoé L.', '1 690'], ['7', 'Nora K.', '1 580']].map(([rank, name, points]) => <div className="ranking-row" key={name}><span>{rank}</span><i>{name[0]}</i><strong>{name}</strong><b>{points} pts</b></div>)}<div className="ranking-row is-me"><span>8</span><img src={asset('rank-lana.png')} alt="Portrait de Lana" /><strong>Toi · Lana</strong><b>{state.points.toLocaleString('fr-BE')} pts</b></div></div>
     </AppShell>
   )
 }
@@ -124,7 +131,7 @@ export function FavoritesScreen() {
 
 export function EmptyFavoritesScreen() {
   const navigate = useNavigate()
-  return <AppShell><div className="empty-state"><img src={asset('mascot.png')} alt="Mascotte Referio" /><h1>Aucune pépite sauvée… pour l’instant</h1><p>Enregistre les commerces qui te donnent envie pour les retrouver ici.</p><Button full onClick={() => navigate('/client/discover')}>Explorer les environs</Button></div></AppShell>
+  return <AppShell><div className="empty-state"><img src={asset('mascot-favorites.png')} alt="Mascotte Referio avec une boîte vide" /><h1>Aucune pépite sauvée… pour l’instant</h1><p>Enregistre les commerces qui te donnent envie pour les retrouver ici.</p><Button full onClick={() => navigate('/client/discover')}>Explorer les environs</Button></div></AppShell>
 }
 
 export function NotificationsScreen() {
@@ -149,9 +156,9 @@ export function OnboardingScreen({ step }: { step: 1 | 2 | 3 | 4 }) {
   const [selected, setSelected] = useState<string[]>(['Café', 'Boulangerie', 'Culture'])
   const next = step === 1 ? '/onboarding/2' : step === 2 ? '/onboarding/3' : step === 3 ? '/onboarding/4' : '/client/home'
   return (
-    <AppShell tone={step === 1 ? 'forest' : step === 2 ? 'lavender' : step === 3 ? 'sun' : 'lime'}>
-      {step === 1 && <><img className="onboarding-hero" src={asset('onboarding-city.jpg')} alt="Charleroi illustrée" /><PageTitle eyebrow="REFERIO" title="Ta ville, tes pépites." body="Découvre les bonnes adresses grâce à celles et ceux qui les vivent." inverse /><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Commencer</Button></>}
-      {step === 2 && <><img className="onboarding-hero" src={asset('onboarding-value.jpg')} alt="Découverte locale" /><PageTitle eyebrow="COMMENT ÇA MARCHE" title="Du vécu, pas du bruit." /><div className="value-list"><p><b>Découvre</b><span>Des adresses proches et singulières.</span></p><p><b>Vérifie</b><span>Des avis liés à de vraies visites.</span></p><p><b>Progresse</b><span>Points locaux, badges et fidélité partagée.</span></p></div><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Suivant</Button></>}
+    <AppShell tone="light">
+      {step === 1 && <><img className="onboarding-mascot onboarding-mascot--welcome" src={asset('mascot-welcome.png')} alt="Tête de la mascotte Referio" /><PageTitle eyebrow="REFERIO" title="Ta ville, tes pépites." body="Découvre les bonnes adresses grâce à celles et ceux qui les vivent." /><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Commencer</Button></>}
+      {step === 2 && <><img className="onboarding-mascot" src={asset('mascot-discover.png')} alt="Mascotte Referio avec une loupe" /><PageTitle eyebrow="COMMENT ÇA MARCHE" title="Découvre les meilleurs commerces près de chez toi." /><div className="value-list"><p><b>Avis vérifiés</b><span>Associés à de vraies visites.</span></p><p><b>Points locaux</b><span>À chaque action utile.</span></p><p><b>Fidélité partagée</b><span>Entre les commerces du quartier.</span></p></div><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Suivant</Button></>}
       {step === 3 && <><PageTitle eyebrow="TA VILLE" title="Où explores-tu ?" body="La ville détermine les recommandations, la carte et le classement." /><div className="city-picker"><button className="is-selected" type="button" onClick={() => dispatch({ type: 'SET_CITY', city: 'Charleroi' })}><strong>Charleroi</strong><span>Ville pilote</span></button><button type="button" disabled><strong>Bruxelles</strong><span>Bientôt</span></button><button type="button" disabled><strong>Namur</strong><span>Bientôt</span></button></div><p className="selected-city">Ville active : {state.city}</p><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Continuer</Button></>}
       {step === 4 && <><PageTitle eyebrow="TES GOÛTS" title="Qu’est-ce qui te fait vibrer ?" body="Choisis au moins trois catégories. Tu pourras les modifier plus tard." /><div className="interest-grid">{categories.slice(1).concat(['Culture', 'Bien-être', 'Artisanat', 'Sorties']).map((category) => <button type="button" key={category} className={selected.includes(category) ? 'is-selected' : ''} onClick={() => setSelected(selected.includes(category) ? selected.filter((item) => item !== category) : [...selected, category])}>{category}</button>)}</div><div className="screen-spacer" /><Button full disabled={selected.length < 3} onClick={() => navigate(next)}>C’est parti !</Button></>}
     </AppShell>
@@ -161,10 +168,10 @@ export function OnboardingScreen({ step }: { step: 1 | 2 | 3 | 4 }) {
 export function NetworkErrorScreen() {
   const [retrying, setRetrying] = useState(false)
   const navigate = useNavigate()
-  return <AppShell><div className="empty-state"><img src={asset('mascot.png')} alt="Mascotte Referio" /><h1>Oups, la connexion s’est envolée</h1><p>Ton passeport et tes favoris restent disponibles. Le scan attendra le retour du réseau.</p><Button full onClick={() => { setRetrying(true); window.setTimeout(() => navigate('/client/home'), 500) }}>{retrying ? 'Connexion…' : 'Réessayer'}</Button></div></AppShell>
+  return <AppShell><div className="empty-state"><img src={asset('mascot-network.png')} alt="Mascotte Referio débranchant un câble" /><h1>Oups, la connexion s’est envolée</h1><p>Ton passeport et tes favoris restent disponibles. Le scan attendra le retour du réseau.</p><Button full onClick={() => { setRetrying(true); window.setTimeout(() => navigate('/client/home'), 500) }}>{retrying ? 'Connexion…' : 'Réessayer'}</Button></div></AppShell>
 }
 
 export function LocationErrorScreen() {
   const navigate = useNavigate()
-  return <AppShell><div className="empty-state"><img src={asset('mascot.png')} alt="Mascotte Referio" /><h1>Referio ne sait pas où tu es</h1><p>Active la localisation ou continue avec Charleroi comme ville manuelle.</p><Button full onClick={() => navigate('/client/permissions/location')}>Activer la localisation</Button><Button full variant="ghost" onClick={() => navigate('/client/home')}>Continuer avec Charleroi</Button></div></AppShell>
+  return <AppShell><div className="empty-state"><img src={asset('mascot-location.png')} alt="Repère de localisation Referio au repos" /><h1>Referio ne sait pas où tu es</h1><p>Active la localisation ou continue avec Charleroi comme ville manuelle.</p><Button full onClick={() => navigate('/client/permissions/location')}>Activer la localisation</Button><Button full variant="ghost" onClick={() => navigate('/client/home')}>Continuer avec Charleroi</Button></div></AppShell>
 }

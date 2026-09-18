@@ -76,9 +76,18 @@ The bottom navigation follows the current Figma labels exactly: Accueil, Carte, 
 
 ## Assets
 
-All runtime assets are versioned locally in `public/assets/figma`; there are no temporary Figma/CDN URLs. The implementation uses the official brand texture/mark, merchant photography, discovery art, permission scenes, QR camera, profile/ranking imagery, rewards, onboarding, mascot, admin login art and Business photography.
+All runtime assets are versioned locally in `public/assets/figma`; there are no temporary Figma/CDN URLs. The implementation uses the official brand texture/mark, merchant photography, discovery art, permission scenes, QR camera, profile/ranking imagery, rewards, onboarding, admin login art and Business photography.
 
-Some exported SVGs are partial Figma layers rather than complete glyphs. Their official bases are retained and missing glyph detail is composed in CSS. `business-qr.svg` was confirmed to be a checkmark layer, so the Business QR screen uses a deterministic real SVG QR instead of misrepresenting it as a QR matrix.
+The correction pass also integrates the visual language that was previously absent from the clickable experience:
+
+- the official mascot, plus the welcome, discovery, favorites, network and location state variants;
+- nine exported SVG interface icons: search, close, check, chevron, map pin, scan, star, heart and settings;
+- the four official Badge component variants (reward, verified, new and level);
+- all ten official stamp crops, including Curieux, Explorateur, Insider, Local Hero, Légende locale, Première visite, Avis vérifié, Série locale, Ambassadeur and Fidélité complète;
+- the official bottom-navigation and notification assets, plus the food, café, bakery and beauty category assets;
+- the seven Figma reference boards for navigation/actions, categories, gamification, stamps, the verified-visit sequence, onboarding mascots and mascot states. These boards are exposed in `#/design-system` for implementation comparison; the interactive product continues to use semantic components and individual local assets rather than screenshot hotspots.
+
+`business-qr.svg` was confirmed to be a checkmark layer, so the Business QR screen uses a deterministic real SVG QR instead of misrepresenting it as a QR matrix.
 
 ## Motion source audit
 

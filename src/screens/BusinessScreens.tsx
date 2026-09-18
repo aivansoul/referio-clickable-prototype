@@ -12,8 +12,8 @@ function BusinessHeader() {
   return <div className="business-kicker"><Link to="/hub">REFERIO BUSINESS</Link><Link to="/business/dashboard">Tableau de bord</Link></div>
 }
 
-function BusinessShell({ children, tone = 'light', showHeader = true }: { children: ReactNode; tone?: 'light' | 'forest' | 'sun' | 'lavender' | 'info' | 'lime'; showHeader?: boolean }) {
-  return <AppShell tone={tone} statusBar={showHeader} className={showHeader ? 'business-shell' : 'business-shell business-dashboard-shell'}>{showHeader && <BusinessHeader />}{children}</AppShell>
+function BusinessShell({ children, tone = 'light', showHeader = true, className = '' }: { children: ReactNode; tone?: 'light' | 'forest' | 'sun' | 'lavender' | 'info' | 'lime'; showHeader?: boolean; className?: string }) {
+  return <AppShell tone={tone} statusBar={showHeader} className={`${showHeader ? 'business-shell' : 'business-shell business-dashboard-shell'} ${className}`.trim()}>{showHeader && <BusinessHeader />}{children}</AppShell>
 }
 
 export function BusinessLandingScreen() {
@@ -211,7 +211,22 @@ export function BusinessQrScreen() {
 
 export function BusinessProfileScreen() {
   const [saved, setSaved] = useState(false)
-  return <BusinessShell><PageTitle eyebrow="MA FICHE" title="Café Central" /><Field label="Description" multiline value="Un café de quartier lumineux, des produits maison et une équipe attentive." /><Field label="Adresse" value="Rue de la Montagne 12, Charleroi" /><Field label="Téléphone" value="071 00 00 00" /><Button full onClick={() => setSaved(true)}>{saved ? 'Fiche enregistrée' : 'Enregistrer les changements'}</Button></BusinessShell>
+  return <BusinessShell className="business-profile-shell">
+    <PageTitle eyebrow="MA FICHE" title="Café Central" body="Maintiens les informations publiques utiles et vérifiables." />
+    <div className="business-profile-workspace">
+      <section className="business-profile-form">
+        <h2>Informations publiques</h2>
+        <Field label="Description" multiline value="Un café de quartier lumineux, des produits maison et une équipe attentive." />
+        <div className="business-profile-fields"><Field label="Adresse" value="Rue de la Montagne 12, Charleroi" /><Field label="Téléphone" value="071 00 00 00" /></div>
+        <Button full onClick={() => setSaved(true)}>{saved ? 'Fiche enregistrée' : 'Enregistrer les changements'}</Button>
+      </section>
+      <aside className="business-profile-preview">
+        <span>APERÇU PUBLIC</span>
+        <img src={asset('business-asset-3.jpg')} alt="Aperçu du Café Central" />
+        <div><h2>Café Central</h2><p>Café · Brunch · Charleroi centre</p><strong>★ 4,9 · Visite vérifiée</strong></div>
+      </aside>
+    </div>
+  </BusinessShell>
 }
 
 export function BusinessStatsScreen() {

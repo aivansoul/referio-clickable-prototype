@@ -79,7 +79,7 @@ import {
   AdminUsersScreen,
   AdminVerificationsScreen,
 } from './screens/AdminScreens'
-import { WebBusinessCockpitScreen, WebBusinessLandingScreen, WebClientHomeScreen } from './screens/WebScreens'
+import { WebBusinessLandingScreen } from './screens/WebScreens'
 import { DesignSystemScreen, PrototypeHubScreen } from './screens/PrototypeScreens'
 import { motionTransition } from './motion'
 
@@ -177,8 +177,8 @@ export default function App() {
         <Route path="/admin/system" element={<AdminSystemScreen />} />
 
         <Route path="/web/business" element={<WebBusinessLandingScreen />} />
-        <Route path="/web/client" element={<WebClientHomeScreen />} />
-        <Route path="/web/cockpit" element={<WebBusinessCockpitScreen />} />
+        <Route path="/web/client" element={<Navigate to="/client/home" replace />} />
+        <Route path="/web/cockpit" element={<Navigate to="/business/dashboard" replace />} />
         <Route path="/hub" element={<PrototypeHubScreen />} />
         <Route path="/design-system" element={<DesignSystemScreen />} />
         <Route path="*" element={<Navigate to="/hub" replace />} />

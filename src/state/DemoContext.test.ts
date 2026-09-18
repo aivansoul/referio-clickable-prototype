@@ -17,7 +17,7 @@ describe('Referio demo progression', () => {
   it('spends only the available balance and never lifetime points', () => {
     const reviewed = demoReducer(demoReducer(initialState, { type: 'VERIFY_VISIT' }), { type: 'PUBLISH_REVIEW' })
     const redeemed = demoReducer(reviewed, { type: 'USE_REWARD' })
-    expect(redeemed.balance).toBe(900)
+    expect(redeemed.balance).toBe(1300)
     expect(redeemed.points).toBe(1500)
     expect(redeemed.rewardUsed).toBe(true)
     expect(demoReducer(redeemed, { type: 'USE_REWARD' })).toEqual(redeemed)

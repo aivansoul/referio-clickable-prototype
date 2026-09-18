@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
-import { Button, Chip, ListRow, PageTitle, PassportCard, StateCard } from '../components/ui'
+import { Badge, Button, Chip, Icon, ListRow, PageTitle, PassportCard, StampBadge, StateCard } from '../components/ui'
 import { merchants } from '../data/demo'
 import { useDemo } from '../state/DemoContext'
 import { motionTransition } from '../motion'
@@ -60,13 +60,14 @@ export function PointsHistoryScreen() {
 
 export function ChallengesScreen() {
   return (
-    <AppShell tone="lavender" bottomNav>
+    <AppShell tone="lavender" bottomNav className="challenges-shell">
       <PageTitle eyebrow="CHALLENGES" title="Explore ton quartier autrement." body="Des missions simples qui font vivre les bonnes adresses." />
       <Link to="/client/challenges/centre-ville" className="challenge-card">
-        <span>EN COURS</span><h2>Explore 3 commerces du centre</h2><p>2 / 3 · Se termine dimanche</p><strong>+150 points locaux</strong><div className="progress"><i style={{ width: '66%' }} /></div>
+        <StampBadge name="serieLocale" /><div><Badge variant="new">EN COURS</Badge><h2>Le tour des boulangeries</h2><p>2 / 5 · Se termine dimanche</p><strong>+150 points locaux</strong><div className="progress"><i style={{ width: '40%' }} /></div></div>
       </Link>
-      <article className="challenge-card"><span>NOUVEAU</span><h2>Le petit-déjeuner 100 % local</h2><p>0 / 2 · Jusqu’au 30 septembre</p><strong>Badge Matin carolo</strong></article>
-      <article className="challenge-card is-complete"><span>TERMINÉ</span><h2>Trois recommandations utiles</h2><p>Terminé le 12 août</p><strong>+100 points locaux</strong></article>
+      <article className="challenge-card"><StampBadge name="premiereVisite" /><div><span>NOUVEAU</span><h2>Premier avis</h2><p>Partage un avis après une visite vérifiée.</p><strong>+30 points locaux</strong></div></article>
+      <article className="challenge-card"><StampBadge name="ambassadeur" locked /><div><span>À DÉBLOQUER</span><h2>Ambassadeur</h2><p>Inspire 5 amis à découvrir local.</p><strong>Timbre Ambassadeur</strong></div></article>
+      <article className="challenge-card"><StampBadge name="explorateur" /><div><span>SÉRIE · 6 JOURS</span><h2>Explorateur de quartier</h2><p>Découvre une adresse par jour.</p><strong>Timbre Explorateur</strong></div></article>
     </AppShell>
   )
 }
@@ -75,12 +76,13 @@ export function ChallengeDetailScreen() {
   const navigate = useNavigate()
   return (
     <AppShell tone="lavender">
-      <PageTitle eyebrow="CHALLENGE LOCAL" title="Explore trois commerces du centre." body="Une découverte dans trois catégories différentes avant dimanche." />
-      <section className="challenge-progress"><strong>2 / 3</strong><span>Plus qu’une découverte</span><div className="progress"><i style={{ width: '66%' }} /></div></section>
+      <PageTitle eyebrow="CHALLENGE LOCAL" title="Le tour des boulangeries." body="Cinq adresses artisanales à découvrir avant dimanche." />
+      <section className="challenge-progress"><strong>2 / 5</strong><span>Encore trois découvertes</span><div className="progress"><i style={{ width: '40%' }} /></div></section>
       <h2 className="subheading">Ta progression</h2>
       <StateCard label="VALIDÉ" title="Café Moka" body="Café · Visite vérifiée aujourd’hui" />
       <StateCard label="VALIDÉ" title="Maison Dune" body="Boulangerie · Visite vérifiée hier" />
       <StateCard tone="info" label="À DÉCOUVRIR" title="Une adresse shopping" body="Choisis un commerce vérifié du centre." />
+      <img className="challenge-visual" src={asset('challenge-photo.jpg')} alt="Commerces du centre-ville" />
       <div className="screen-spacer" />
       <Button full onClick={() => navigate('/client/daily')}>Voir les commerces proches</Button>
     </AppShell>
@@ -95,7 +97,7 @@ export function ChallengeSuccessScreen() {
     <AppShell tone="lavender">
       <PageTitle eyebrow="CHALLENGE RÉUSSI" title="Trois découvertes. Un quartier plus vivant." />
       <motion.section className="celebration" initial={reduced ? false : { scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={reduced ? { duration: 0 } : motionTransition.slow}>
-        <span aria-hidden="true">★</span><strong>+150</strong><p>points locaux</p><b>Niveau Local Hero consolidé</b>
+        <Icon name="star" /><strong>+150</strong><p>points locaux</p><b>Niveau Local Hero consolidé</b>
       </motion.section>
       <div className="merchant-mini"><img src={asset('challenge-photo.jpg')} alt="Commerces du centre-ville" /><div><strong>Centre-ville</strong><p>3 adresses découvertes</p></div></div>
       <div className="screen-spacer" />
@@ -109,15 +111,16 @@ export function ChallengeSuccessScreen() {
 export function RewardsScreen() {
   const { state } = useDemo()
   return (
-    <AppShell tone="sun" bottomNav>
+    <AppShell tone="sun" bottomNav className="rewards-shell">
       <PageTitle eyebrow="RÉCOMPENSES" title="Des avantages qui restent dans le quartier." />
       <section className="balance-inline"><span>Solde disponible</span><strong>{state.balance.toLocaleString('fr-BE')} points locaux</strong></section>
       <Link to="/client/rewards/atelier-basilic" className={`reward-card${state.rewardUnlocked ? '' : ' is-locked'}`}>
-        <img className="reward-card__media" src={asset('reward-catalog-1.jpg')} alt="Dessert maison et café" />
-        <span>{state.rewardUnlocked ? 'DISPONIBLE' : 'BIENTÔT'}</span><h2>Dessert maison offert</h2><strong>600 points locaux</strong><p>Atelier Basilic · Jusqu’au 30 septembre</p>
+        <img className="reward-card__media" src={asset('reward-catalog-1.jpg')} alt="Café chez Café Central" />
+        <Badge variant="reward">200 points locaux</Badge><h2>Café offert</h2><strong>200 points locaux</strong><p>Café Central · Jusqu’au 30 septembre</p>
       </Link>
-      <article className="reward-card"><img className="reward-card__media" src={asset('reward-catalog-2.jpg')} alt="Bouquet local" /><span>DISPONIBLE</span><h2>Bouquet de saison</h2><strong>900 points locaux</strong><p>Maison Botanique · Valable 30 jours</p></article>
-      <article className="reward-card is-locked"><img className="reward-card__media" src={asset('reward-catalog-3.jpg')} alt="Brunch local" /><span>VERROUILLÉE</span><h2>Brunch du quartier</h2><strong>1 800 points locaux</strong><p>Encore {Math.max(0, 1800 - state.balance)} points</p></article>
+      <article className="reward-card"><img className="reward-card__media" src={asset('reward-catalog-2.jpg')} alt="Bouquet local" /><Badge variant="reward">350 points locaux</Badge><h2>−5 € sur un bouquet</h2><strong>350 points locaux</strong><p>Atelier Vert · Valable 30 jours</p></article>
+      <article className="reward-card"><img className="reward-card__media" src={asset('reward-catalog-3.jpg')} alt="Pâtisserie locale" /><Badge variant="reward">150 points locaux</Badge><h2>Pâtisserie offerte</h2><strong>150 points locaux</strong><p>Boulangerie Louise · Valable 30 jours</p></article>
+      <article className="reward-card is-locked"><img className="reward-card__media" src={asset('reward-photo.jpg')} alt="Brunch local" /><span>VERROUILLÉE</span><h2>Brunch pour deux</h2><strong>800 points locaux</strong><p>Niveau Légende locale requis</p></article>
     </AppShell>
   )
 }
@@ -127,13 +130,13 @@ export function RewardDetailScreen() {
   const navigate = useNavigate()
   return (
     <AppShell tone="sun">
-      <PageTitle eyebrow="RÉCOMPENSE" title="Un dessert maison chez Atelier Basilic." />
-      <section className="reward-card"><h2>Dessert maison offert</h2><strong>600 points locaux</strong><p>Disponible jusqu’au 30 septembre</p></section>
-      <div className="merchant-mini"><img src={merchants[2].image} alt="Atelier Basilic" /><div><strong>Atelier Basilic</strong><p>Restaurant · 900 m · ★ 4,7</p></div></div>
+      <PageTitle eyebrow="RÉCOMPENSE" title="Un café offert chez Café Central." />
+      <section className="reward-card"><h2>Café offert</h2><strong>200 points locaux</strong><p>Disponible jusqu’au 30 septembre</p></section>
+      <div className="merchant-mini"><img src={merchants[0].image} alt="Café Central" /><div><strong>Café Central</strong><p>Café · 450 m · 4,9</p></div></div>
       <div className="terms"><p>À présenter avant l’addition.</p><p>Une activation par personne.</p><p>Valable 15 minutes après activation.</p></div>
-      <img className="reward-visual" src={asset('reward-photo.jpg')} alt="Dessert maison d’Atelier Basilic" />
-      <Button full disabled={!state.rewardUnlocked || state.balance < 600} onClick={() => navigate('/client/rewards/atelier-basilic/active')}>
-        {state.rewardUnlocked ? 'Activer pour 600 points locaux' : 'Débloque d’abord un badge'}
+      <img className="reward-visual" src={asset('reward-catalog-1.jpg')} alt="Café offert chez Café Central" />
+      <Button full disabled={!state.rewardUnlocked || state.balance < 200} onClick={() => navigate('/client/rewards/atelier-basilic/active')}>
+        {state.rewardUnlocked ? 'Activer pour 200 points locaux' : 'Débloque d’abord un badge'}
       </Button>
     </AppShell>
   )
@@ -145,8 +148,8 @@ export function RewardActiveScreen() {
   return (
     <AppShell tone="sun">
       <PageTitle eyebrow="RÉCOMPENSE ACTIVÉE" title="Montre ce code au commerce." />
-      <section className="redemption-code"><img src={asset('redemption-code.jpg')} alt="" /><span>ATELIER BASILIC</span><strong>BASILIC-4821</strong><b>14:32 restantes</b></section>
-      <section className="reward-card"><h2>Dessert maison offert</h2><strong>Activée · 600 points locaux</strong><p>Expire aujourd’hui à 20:15</p></section>
+      <section className="redemption-code"><img src={asset('redemption-code.jpg')} alt="" /><span>CAFÉ CENTRAL</span><strong>CENTRAL-4821</strong><b>14:32 restantes</b></section>
+      <section className="reward-card"><h2>Café offert</h2><strong>Activée · 200 points locaux</strong><p>Expire aujourd’hui à 20:15</p></section>
       <p>Ne ferme pas cet écran avant validation par le commerce.</p>
       <div className="screen-spacer" />
       <Button full variant="secondary" disabled={state.rewardUsed} onClick={() => { dispatch({ type: 'USE_REWARD' }); navigate('/client/rewards') }}>

@@ -22,7 +22,7 @@ test('verified visit unlocks the review flow', async ({ page }) => {
   await expect(page.getByText('5 / 6 tampons')).toBeVisible()
   await page.getByRole('button', { name: 'Donner mon avis vérifié' }).click()
   await page.getByRole('button', { name: 'Publier mon avis' }).click()
-  await expect(page.getByRole('heading', { name: 'Guide du centre' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Local Hero' })).toBeVisible()
   await expect(page.getByText('1 500 points locaux cumulés')).toBeVisible()
 })
 
@@ -33,6 +33,43 @@ test('mobile routes do not create document-level horizontal overflow', async ({ 
     const metrics = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: innerWidth }))
     expect(metrics.width, route).toBeLessThanOrEqual(metrics.viewport)
   }
+})
+
+test('mobile discovery and business copy remain unclipped', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'mobile-390', 'mobile visual geometry check')
+  await page.goto('#/client/discover')
+  const wheel = await page.locator('.discovery-wheel').boundingBox()
+  const controls = await page.locator('.wheel-controls').boundingBox()
+  expect(wheel).not.toBeNull()
+  expect(controls).not.toBeNull()
+  expect(wheel!.y + wheel!.height).toBeLessThanOrEqual(controls!.y)
+
+  await page.goto('#/business/dashboard')
+  const scoreCopy = await page.locator('.business-score-copy p').evaluate((element) => ({
+    clientHeight: element.clientHeight,
+    clientWidth: element.clientWidth,
+    scrollHeight: element.scrollHeight,
+    scrollWidth: element.scrollWidth,
+  }))
+  expect(scoreCopy.scrollHeight).toBeLessThanOrEqual(scoreCopy.clientHeight)
+  expect(scoreCopy.scrollWidth).toBeLessThanOrEqual(scoreCopy.clientWidth)
+})
+
+test('client and business routes become full web platforms at 1440 px', async ({ page }, testInfo) => {
+  test.skip(testInfo.project.name !== 'desktop-1440', 'desktop platform geometry check')
+  for (const route of ['client/home', 'client/discover', 'client/map', 'client/profile', 'client/rewards', 'business/dashboard', 'business/profile']) {
+    await page.goto(`#/${route}`)
+    await expect(page.locator('.route-transition')).toHaveCount(1)
+    await expect(page.locator('.phone-shell')).toHaveCount(0)
+    await expect(page.locator('.platform-panel')).toHaveCount(1)
+    await expect(page.locator('.platform-panel')).toBeVisible()
+    const metrics = await page.evaluate(() => ({ width: document.documentElement.scrollWidth, viewport: innerWidth }))
+    expect(metrics.width, route).toBeLessThanOrEqual(metrics.viewport)
+  }
+  await page.goto('#/web/client')
+  await expect(page).toHaveURL(/#\/client\/home$/)
+  await page.goto('#/web/cockpit')
+  await expect(page).toHaveURL(/#\/business\/dashboard$/)
 })
 
 test('reduced motion keeps scan state functional', async ({ page }, testInfo) => {

@@ -62,10 +62,10 @@ Status: **implemented and clickable** unless marked as a deliberate simulation.
 | Routes | Coverage |
 |---|---|
 | `#/web/business` | 1440 px Business landing with exact 80 px header and 120 px gutters |
-| `#/web/client` | Desktop Client home with search, points and three-card grid |
-| `#/web/cockpit` | 240 px Business sidebar, metrics, 7-day chart, reviews and offer CTA |
+| `#/web/client` | Convenience alias to the responsive Client home at `#/client/home` |
+| `#/web/cockpit` | Convenience alias to the responsive Business cockpit at `#/business/dashboard` |
 | `#/hub` | Scenario launcher, surface switching, current state and reset |
-| `#/design-system` | Tokens, type, actions, fields, cards and visual contract |
+| `#/design-system` | Tokens, type, actions, fields, cards, official icons/badges/stamps/mascots and Figma reference boards |
 
 ## State scenarios
 
@@ -77,5 +77,6 @@ Main mutation: visit → 1,330 points/5 stamps → review → 1,500 points/Lége
 
 - 360 × 800: full-width phone canvas; no document overflow.
 - 390 × 844: canonical phone canvas.
-- 768 × 1024: centered 390 × 844 mobile canvas; Admin/Web adapt independently.
-- 1440 × 900: Web/Admin/Cockpit desktop geometry.
+- Up to 899 px: Client and Business use the completed mobile shell and mobile navigation; the canonical 390 px canvas stays centered on wider tablet previews.
+- From 900 px: the same Client and Business routes become true responsive web-platform layouts; Client uses a fixed top header and Business uses a 240 px sidebar.
+- 1440 × 900: full-width Client, Business and Admin desktop geometry; no phone shell is rendered on the Client or Business platform routes.

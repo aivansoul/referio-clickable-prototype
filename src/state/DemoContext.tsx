@@ -92,7 +92,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
           }
     case 'USE_REWARD':
       return state.rewardUnlocked && !state.rewardUsed
-        ? { ...state, rewardUsed: true, balance: Math.max(0, state.balance - 600) }
+        ? { ...state, rewardUsed: true, balance: Math.max(0, state.balance - 200) }
         : state
     case 'SET_CITY':
       return { ...state, city: action.city }

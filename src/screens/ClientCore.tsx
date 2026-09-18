@@ -2,7 +2,7 @@ import { motion, useReducedMotion } from 'motion/react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
-import { Button, Chip, Field, MerchantCard, PageTitle, PassportCard, PointsCard, SectionHeading, StateCard } from '../components/ui'
+import { Badge, Button, Chip, Field, Icon, MerchantCard, PageTitle, PassportCard, PointsCard, SectionHeading, StampBadge, StateCard } from '../components/ui'
 import { categories, merchants } from '../data/demo'
 import { useDemo } from '../state/DemoContext'
 import { motionDuration, motionTransition } from '../motion'
@@ -35,11 +35,20 @@ export function HomeScreen() {
     ['home-pepite-3.png', 'Maison Dune'],
     ['home-pepite-4.png', 'Atelier Basilic'],
   ]
+  const categoryIcons = [
+    ['Manger', 'category-food.png'],
+    ['Café', 'category-cafe.png'],
+    ['Boulangerie', 'category-bakery.png'],
+    ['Beauté', 'category-beauty.png'],
+  ]
   return (
     <AppShell topBar statusBar={false} bottomNav padded={false} className="home-shell">
       <div className="home-page">
         <h1>Bonjour Lana,<br />envie de découvrir quoi aujourd’hui&nbsp;?</h1>
-        <Link className="search-box" to="/client/search">Rechercher un commerce…</Link>
+        <Link className="search-box" to="/client/search"><Icon name="search" />Rechercher un commerce…</Link>
+        <div className="category-icon-row" aria-label="Catégories illustrées">
+          {categoryIcons.map(([category, image]) => <button type="button" className={activeCategory === category ? 'is-active' : ''} onClick={() => setActiveCategory(category)} key={category}><img src={asset(image)} alt="" /><span>{category}</span></button>)}
+        </div>
         <div className="chip-row" aria-label="Catégories">
           {categories.map((category) => (
             <Chip key={category} active={category === activeCategory} tone={category === 'Nouveau' ? 'new' : undefined} onClick={() => setActiveCategory(category)}>
@@ -49,14 +58,14 @@ export function HomeScreen() {
         </div>
         <PointsCard points={state.points} level={state.level} />
         <SectionHeading title="Pépites du jour" action="Voir tout" to="/client/discover" />
-        <div className="pepite-strip">
+        <div className="home-mobile-feed"><div className="pepite-strip">
           {pepites.map(([image, label]) => (
             <Link to={label === 'Café Moka' ? '/client/merchant/cafe-central' : '/client/discover'} key={label} aria-label={label}>
               <img src={asset(image)} alt="" />
             </Link>
           ))}
-        </div>
-        <MerchantCard merchant={merchants[0]} />
+        </div><MerchantCard merchant={merchants[0]} /></div>
+        <div className="home-merchant-grid">{merchants.map((merchant) => <MerchantCard merchant={merchant} key={merchant.id} />)}</div>
       </div>
     </AppShell>
   )
@@ -68,32 +77,36 @@ export function DiscoverScreen() {
   const current = merchants[selected % merchants.length]
   const rotate = selected * -42
   return (
-    <AppShell topBar bottomNav>
-      <PageTitle title="Pépites du jour" body="Faites tourner pour explorer les adresses du coin." />
-      <div className="chip-row"><Chip active>Tout</Chip><Chip>Manger</Chip><Chip>Beauté</Chip><Chip>Shopping</Chip></div>
-      <article className="selected-pepite">
-        <div><h2>{current.name}</h2><p>{current.category} · ★ {current.rating.toFixed(1)} · {current.distance}</p></div>
-        <Link className="button button--primary" to={`/client/merchant/${current.id}`}>Découvrir</Link>
-      </article>
-      <motion.div className="discovery-wheel" animate={{ rotate }} transition={reduced ? { duration: 0 } : motionTransition.response}>
-        {[...merchants, ...merchants].map((merchant, index) => (
-          <button
-            type="button"
-            key={`${merchant.id}-${index}`}
-            className={index === selected ? 'is-selected' : ''}
-            style={{ transform: `rotate(${index * 42}deg) translateY(-118px) rotate(${-index * 42}deg)` }}
-            onClick={() => setSelected(index)}
-            aria-label={`Sélectionner ${merchant.name}`}
-          >
-            <img src={index === selected ? asset('pepite-selected.png') : asset(index % 2 ? 'pepite-2.png' : 'pepite-1.png')} alt="" />
-          </button>
-        ))}
-      </motion.div>
-      <div className="wheel-controls">
-        <Button variant="ghost" onClick={() => setSelected((selected - 1 + merchants.length) % merchants.length)}>Précédente</Button>
-        <Button variant="secondary" onClick={() => setSelected((selected + 1) % merchants.length)}>Suivante</Button>
-      </div>
-      <p className="gesture-help">Fais glisser la roue avec le pouce, sans cacher la carte.</p>
+    <AppShell topBar bottomNav className="discover-shell">
+      <section className="discover-copy">
+        <PageTitle title="Pépites du jour" body="Faites tourner pour explorer les adresses du coin." />
+        <div className="chip-row"><Chip active>Tout</Chip><Chip>Manger</Chip><Chip>Beauté</Chip><Chip>Shopping</Chip></div>
+        <article className="selected-pepite">
+          <div><h2>{current.name}</h2><p>{current.category} · ★ {current.rating.toFixed(1)} · {current.distance}</p></div>
+          <Link className="button button--primary" to={`/client/merchant/${current.id}`}>Découvrir</Link>
+        </article>
+      </section>
+      <section className="discover-experience" aria-label="Roue de découverte locale">
+        <motion.div className="discovery-wheel" animate={{ rotate }} transition={reduced ? { duration: 0 } : motionTransition.response}>
+          {[...merchants, ...merchants].map((merchant, index) => (
+            <button
+              type="button"
+              key={`${merchant.id}-${index}`}
+              className={index === selected ? 'is-selected' : ''}
+              style={{ transform: `rotate(${index * 42}deg) translateY(-118px) rotate(${-index * 42}deg)` }}
+              onClick={() => setSelected(index)}
+              aria-label={`Sélectionner ${merchant.name}`}
+            >
+              <img src={index === selected ? asset('pepite-selected.png') : asset(index % 2 ? 'pepite-2.png' : 'pepite-1.png')} alt="" />
+            </button>
+          ))}
+        </motion.div>
+        <div className="wheel-controls">
+          <Button variant="ghost" onClick={() => setSelected((selected - 1 + merchants.length) % merchants.length)}>Précédente</Button>
+          <Button variant="secondary" onClick={() => setSelected((selected + 1) % merchants.length)}>Suivante</Button>
+        </div>
+        <p className="gesture-help"><span className="gesture-help__mobile">Fais glisser la roue avec le pouce</span><span className="gesture-help__desktop">Clique sur une adresse ou utilise les flèches</span>, sans cacher la carte.</p>
+      </section>
     </AppShell>
   )
 }
@@ -175,8 +188,9 @@ export function MapScreen() {
     <AppShell bottomNav padded={false}>
       <div className="map-page">
         <PageTitle eyebrow="CARTE" title="Autour de Charleroi" />
-        <Link className="search-box" to="/client/search">Rechercher sur la carte…</Link>
-        <div className="map-canvas" style={{ backgroundImage: `url(${asset('map-background.png')})` }} aria-label="Carte simulée de Charleroi">
+        <Link className="search-box" to="/client/search"><Icon name="search" />Rechercher sur la carte…</Link>
+        <div className="chip-row map-filters" aria-label="Filtrer les commerces"><Chip active>Tout</Chip><Chip>Café</Chip><Chip>Manger</Chip><Chip>Beauté</Chip></div>
+        <div className="map-canvas" style={{ backgroundImage: `url(${asset('map-background-clean.png')})` }} aria-label="Carte simulée de Charleroi">
           <i className="road road--one" /><i className="road road--two" /><i className="road road--three" />
           {merchants.map((merchant, index) => (
             <button
@@ -208,12 +222,12 @@ export function MerchantScreen() {
       <div className="merchant-detail">
         <div className="merchant-hero">
           <img src={asset('cafe-central-hero.jpg')} alt="Intérieur chaleureux de Café Central" />
-          <Link to="/client/home" className="floating-control" aria-label="Retour">‹</Link>
-          <button type="button" className="floating-control floating-control--right" onClick={() => dispatch({ type: 'FAVORITE', merchantId: merchant.id })}>{favorite ? 'Enregistré' : 'Enregistrer'}</button>
+          <Link to="/client/home" className="floating-control floating-control--back" aria-label="Retour"><Icon name="chevronRight" /></Link>
+          <button type="button" className="floating-control floating-control--right" onClick={() => dispatch({ type: 'FAVORITE', merchantId: merchant.id })}><Icon name="heart" />{favorite ? 'Enregistré' : 'Enregistrer'}</button>
         </div>
         <div className="merchant-detail__body">
           <span className="offer-pill">Offre · −5 %</span>
-          <h1>Café Central <span className="verified-mark">Vérifié</span></h1>
+          <h1>Café Central <Badge variant="verified" /></h1>
           <p>Café · Brunch · Charleroi centre · à 450 m</p>
           <strong className="rating">★ 4,9 (176 avis)</strong>
           <span className="social-proof">+15 · Recommandé par 18 personnes</span>
@@ -253,7 +267,7 @@ export function QrScreen() {
         {scanning && !reduced && <motion.i initial={{ top: '20%' }} animate={{ top: '75%' }} transition={motionTransition.slow} />}
       </div>
       <div className="screen-spacer" />
-      <Button full onClick={scan} disabled={scanning}>{scanning ? 'Validation…' : 'Simuler le scan'}</Button>
+      <Button full onClick={scan} disabled={scanning}><Icon name="scan" />{scanning ? 'Validation…' : 'Simuler le scan'}</Button>
       <Button full variant="ghost" onClick={scan}>Saisir un code</Button>
     </AppShell>
   )
@@ -266,6 +280,7 @@ export function VisitSuccessScreen() {
     <AppShell tone="lime">
       <PageTitle eyebrow="BRAVO" title="Ta visite compte vraiment." body="Café Moka rejoint ton historique local." />
       <StateCard label="VISITE VÉRIFIÉE" title="+50 points locaux" body="Ta progression fidélité et ton historique ont été mis à jour." />
+      <div className="visit-celebration"><StampBadge name="premiereVisite" /><img src={asset('mascot.png')} alt="Mascotte Referio" /><div><Badge variant="reward" /><strong>Premier passage validé</strong><span>Série locale : 1 jour</span></div></div>
       <PassportCard stamps={state.stamps} />
       <div className="points-earned"><span>Points gagnés</span><strong>+50</strong></div>
       <div className="screen-spacer" />
