@@ -8,12 +8,15 @@ export type DemoState = {
   stamps: number
   interested: string[]
   favorites: string[]
+  dailyDiscoveries: string[]
+  dailyBonusClaimed: boolean
   visitVerified: boolean
   reviewPublished: boolean
   badgeUnlocked: boolean
   rewardUnlocked: boolean
   rewardUsed: boolean
   challengeProgress: number
+  challengeRewardClaimed: boolean
   notifications: number
   businessCompleteness: number
   adminPending: number
@@ -22,9 +25,11 @@ export type DemoState = {
 type DemoAction =
   | { type: 'INTEREST'; merchantId: string }
   | { type: 'FAVORITE'; merchantId: string }
+  | { type: 'DISCOVER_MERCHANT'; discoveryId: string }
   | { type: 'VERIFY_VISIT' }
   | { type: 'PUBLISH_REVIEW' }
   | { type: 'USE_REWARD' }
+  | { type: 'CLAIM_CHALLENGE_REWARD' }
   | { type: 'SET_CITY'; city: string }
   | { type: 'COMPLETE_BUSINESS_STEP'; amount?: number }
   | { type: 'VALIDATE_BUSINESS' }
@@ -38,12 +43,15 @@ export const initialState: DemoState = {
   stamps: 4,
   interested: [],
   favorites: ['cafe-central'],
+  dailyDiscoveries: [],
+  dailyBonusClaimed: false,
   visitVerified: false,
   reviewPublished: false,
-  badgeUnlocked: false,
+  badgeUnlocked: true,
   rewardUnlocked: false,
   rewardUsed: false,
   challengeProgress: 2,
+  challengeRewardClaimed: false,
   notifications: 3,
   businessCompleteness: 72,
   adminPending: 14,
@@ -67,6 +75,22 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
           ? state.favorites.filter((id) => id !== action.merchantId)
           : [...state.favorites, action.merchantId],
       }
+    case 'DISCOVER_MERCHANT': {
+      if (state.dailyDiscoveries.includes(action.discoveryId)) return state
+
+      const dailyDiscoveries = [...state.dailyDiscoveries, action.discoveryId]
+      const dailyBonusClaimed = state.dailyBonusClaimed || dailyDiscoveries.length >= 8
+      const earnedPoints = 5 + (!state.dailyBonusClaimed && dailyBonusClaimed ? 25 : 0)
+
+      return {
+        ...state,
+        dailyDiscoveries,
+        dailyBonusClaimed,
+        points: state.points + earnedPoints,
+        balance: state.balance + earnedPoints,
+        challengeProgress: Math.min(5, state.challengeProgress + 1),
+      }
+    }
     case 'VERIFY_VISIT':
       return state.visitVerified
         ? state
@@ -76,7 +100,7 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
             points: state.points + 50,
             balance: state.balance + 50,
             stamps: state.stamps + 1,
-            challengeProgress: 3,
+            challengeProgress: Math.max(3, state.challengeProgress),
           }
     case 'PUBLISH_REVIEW':
       return state.reviewPublished
@@ -93,6 +117,10 @@ export function demoReducer(state: DemoState, action: DemoAction): DemoState {
     case 'USE_REWARD':
       return state.rewardUnlocked && !state.rewardUsed
         ? { ...state, rewardUsed: true, balance: Math.max(0, state.balance - 200) }
+        : state
+    case 'CLAIM_CHALLENGE_REWARD':
+      return state.challengeProgress >= 5 && !state.challengeRewardClaimed
+        ? { ...state, challengeRewardClaimed: true, points: state.points + 150, balance: state.balance + 150 }
         : state
     case 'SET_CITY':
       return { ...state, city: action.city }
@@ -118,7 +146,15 @@ const DemoContext = createContext<DemoContextValue | null>(null)
 function loadInitialState(): DemoState {
   try {
     const saved = window.localStorage.getItem(STORAGE_KEY)
-    return saved ? { ...initialState, ...(JSON.parse(saved) as Partial<DemoState>) } : initialState
+    if (!saved) return initialState
+
+    const parsed = JSON.parse(saved) as Partial<DemoState>
+    const levelHasBadge = parsed.level === 'Local Hero' || parsed.level === 'Légende locale'
+    return {
+      ...initialState,
+      ...parsed,
+      badgeUnlocked: Boolean(parsed.badgeUnlocked || levelHasBadge),
+    }
   } catch {
     return initialState
   }

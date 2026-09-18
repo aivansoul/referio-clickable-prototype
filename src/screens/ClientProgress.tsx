@@ -1,5 +1,5 @@
 import { motion, useReducedMotion } from 'motion/react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { AppShell } from '../components/AppShell'
 import { Badge, Button, Chip, Icon, ListRow, PageTitle, PassportCard, StampBadge, StateCard } from '../components/ui'
@@ -40,11 +40,15 @@ export function PassportDetailScreen() {
 
 export function PointsHistoryScreen() {
   const { state } = useDemo()
-  const rows = [
-    ['Visite vérifiée · Café Moka', 'Aujourd’hui · 10:42', '+50'],
-    ['Avis vérifié · Maison Dune', 'Hier · 18:05', '+30'],
-    ['Découverte du jour', 'Hier · 12:17', '+5'],
-    ['Challenge centre-ville', '18 août · 16:21', '+150'],
+  const dailyCount = state.dailyDiscoveries.length
+  const dailyPoints = dailyCount * 5 + (state.dailyBonusClaimed ? 25 : 0)
+  const rows: Array<[string, string, string]> = [
+    ...(dailyCount > 0 ? [[`Pépites du jour · ${dailyCount}/8`, 'Aujourd’hui', `+${dailyPoints}`] as [string, string, string]] : []),
+    ...(state.visitVerified ? [['Visite vérifiée · Café Moka', 'Aujourd’hui · 10:42', '+50'] as [string, string, string]] : []),
+    ...(state.reviewPublished ? [['Avis vérifié · Café Central', 'Aujourd’hui · 10:49', '+170'] as [string, string, string]] : []),
+    ...(state.challengeRewardClaimed ? [['Challenge centre-ville', 'Aujourd’hui', '+150'] as [string, string, string]] : []),
+    ...(state.rewardUsed ? [['Récompense · Café offert', 'Aujourd’hui', '−200'] as [string, string, string]] : []),
+    ['Challenge gourmand', '18 août · 16:21', '+150'],
   ]
   return (
     <AppShell>
@@ -52,56 +56,69 @@ export function PointsHistoryScreen() {
       <section className="balance-card"><span>SOLDE DISPONIBLE</span><strong>{state.balance.toLocaleString('fr-BE')}</strong><small>{state.points.toLocaleString('fr-BE')} points cumulés · {state.level}</small></section>
       <div className="chip-row"><Chip active>Tous</Chip><Chip>Gagnés</Chip><Chip>Utilisés</Chip></div>
       <div className="history-list">
-        {rows.map(([title, date, points]) => <div className="history-row" key={title}><span><b>{title}</b><small>{date}</small></span><strong>{points}</strong></div>)}
+        {rows.map(([title, date, points]) => <div className={`history-row${points.startsWith('−') ? ' is-spent' : ''}`} key={title}><span><b>{title}</b><small>{date}</small></span><strong>{points}</strong></div>)}
       </div>
     </AppShell>
   )
 }
 
 export function ChallengesScreen() {
+  const { state } = useDemo()
+  const challengeProgress = Math.min(state.challengeProgress, 5)
+  const challengeComplete = challengeProgress === 5
+  const ambassadorProgress = Math.min(state.interested.length, 5)
+  const explorerProgress = Math.min(state.dailyDiscoveries.length, 7)
   return (
     <AppShell tone="lavender" bottomNav className="challenges-shell">
       <PageTitle eyebrow="CHALLENGES" title="Explore ton quartier autrement." body="Des missions simples qui font vivre les bonnes adresses." />
-      <Link to="/client/challenges/centre-ville" className="challenge-card">
-        <StampBadge name="serieLocale" /><div><Badge variant="new">EN COURS</Badge><h2>Le tour des boulangeries</h2><p>2 / 5 · Se termine dimanche</p><strong>+150 points locaux</strong><div className="progress"><i style={{ width: '40%' }} /></div></div>
+      <Link to="/client/challenges/centre-ville" className={`challenge-card${challengeComplete ? ' is-complete' : ''}`}>
+        <StampBadge name="serieLocale" locked={!challengeComplete} /><div><Badge variant={challengeComplete ? 'verified' : 'new'}>{challengeComplete ? 'TERMINÉ' : 'EN COURS'}</Badge><h2>Le tour des boulangeries</h2><p>{challengeProgress} / 5 · {challengeComplete ? 'Challenge terminé' : 'Se termine dimanche'}</p><strong>+150 points locaux</strong><div className="progress"><i style={{ width: `${challengeProgress * 20}%` }} /></div></div>
       </Link>
-      <article className="challenge-card"><StampBadge name="premiereVisite" /><div><span>NOUVEAU</span><h2>Premier avis</h2><p>Partage un avis après une visite vérifiée.</p><strong>+30 points locaux</strong></div></article>
-      <article className="challenge-card"><StampBadge name="ambassadeur" locked /><div><span>À DÉBLOQUER</span><h2>Ambassadeur</h2><p>Inspire 5 amis à découvrir local.</p><strong>Timbre Ambassadeur</strong></div></article>
-      <article className="challenge-card"><StampBadge name="explorateur" /><div><span>SÉRIE · 6 JOURS</span><h2>Explorateur de quartier</h2><p>Découvre une adresse par jour.</p><strong>Timbre Explorateur</strong></div></article>
+      <article className={`challenge-card${state.reviewPublished ? ' is-complete' : ''}`}><StampBadge name="avisVerifie" locked={!state.reviewPublished} /><div><span>{state.reviewPublished ? 'TERMINÉ' : 'À FAIRE'}</span><h2>Premier avis</h2><p>{state.reviewPublished ? 'Ton avis vérifié aide déjà le quartier.' : 'Partage un avis après une visite vérifiée.'}</p><strong>{state.reviewPublished ? 'Timbre Avis vérifié obtenu' : '+30 points locaux'}</strong></div></article>
+      <article className={`challenge-card${ambassadorProgress === 5 ? ' is-complete' : ''}`}><StampBadge name="ambassadeur" locked={ambassadorProgress < 5} /><div><span>{ambassadorProgress} / 5 RECOMMANDATIONS</span><h2>Ambassadeur</h2><p>Inspire 5 amis à découvrir local.</p><strong>{ambassadorProgress === 5 ? 'Timbre Ambassadeur obtenu' : 'Timbre Ambassadeur'}</strong><div className="progress"><i style={{ width: `${ambassadorProgress * 20}%` }} /></div></div></article>
+      <article className={`challenge-card${explorerProgress === 7 ? ' is-complete' : ''}`}><StampBadge name="explorateur" locked={explorerProgress === 0} /><div><span>SÉRIE · {explorerProgress} / 7 JOURS</span><h2>Explorateur de quartier</h2><p>Découvre une adresse par jour.</p><strong>{explorerProgress === 7 ? 'Timbre Explorateur obtenu' : 'Timbre Explorateur'}</strong><div className="progress"><i style={{ width: `${(explorerProgress / 7) * 100}%` }} /></div></div></article>
     </AppShell>
   )
 }
 
 export function ChallengeDetailScreen() {
+  const { state } = useDemo()
   const navigate = useNavigate()
+  const progress = Math.min(state.challengeProgress, 5)
+  const remaining = 5 - progress
+  const stops = ['Café Moka', 'Maison Dune', 'Studio Nola', 'Boulangerie Louise', 'Atelier Basilic']
   return (
     <AppShell tone="lavender">
       <PageTitle eyebrow="CHALLENGE LOCAL" title="Le tour des boulangeries." body="Cinq adresses artisanales à découvrir avant dimanche." />
-      <section className="challenge-progress"><strong>2 / 5</strong><span>Encore trois découvertes</span><div className="progress"><i style={{ width: '40%' }} /></div></section>
+      <section className="challenge-progress"><strong>{progress} / 5</strong><span>{remaining === 0 ? 'Challenge terminé' : `Encore ${remaining} découverte${remaining > 1 ? 's' : ''}`}</span><div className="progress"><i style={{ width: `${progress * 20}%` }} /></div></section>
       <h2 className="subheading">Ta progression</h2>
-      <StateCard label="VALIDÉ" title="Café Moka" body="Café · Visite vérifiée aujourd’hui" />
-      <StateCard label="VALIDÉ" title="Maison Dune" body="Boulangerie · Visite vérifiée hier" />
-      <StateCard tone="info" label="À DÉCOUVRIR" title="Une adresse shopping" body="Choisis un commerce vérifié du centre." />
+      {stops.slice(0, progress).map((stop, index) => <StateCard label="VALIDÉ" title={stop} body={`Visite vérifiée · étape ${index + 1}`} key={stop} />)}
+      {remaining > 0 && <StateCard tone="info" label="À DÉCOUVRIR" title={stops[progress]} body="Choisis un commerce vérifié du centre." />}
       <img className="challenge-visual" src={asset('challenge-photo.jpg')} alt="Commerces du centre-ville" />
       <div className="screen-spacer" />
-      <Button full onClick={() => navigate('/client/daily')}>Voir les commerces proches</Button>
+      <Button full onClick={() => navigate(remaining === 0 ? '/client/challenges/centre-ville/success' : '/client/daily')}>{remaining === 0 ? 'Voir ma réussite' : 'Voir les commerces proches'}</Button>
     </AppShell>
   )
 }
 
 export function ChallengeSuccessScreen() {
+  const { state, dispatch } = useDemo()
   const navigate = useNavigate()
   const [shared, setShared] = useState(false)
   const reduced = useReducedMotion()
+  const complete = state.challengeProgress >= 5
+  useEffect(() => {
+    if (complete) dispatch({ type: 'CLAIM_CHALLENGE_REWARD' })
+  }, [complete, dispatch])
   return (
     <AppShell tone="lavender">
-      <PageTitle eyebrow="CHALLENGE RÉUSSI" title="Trois découvertes. Un quartier plus vivant." />
+      <PageTitle eyebrow={complete ? 'CHALLENGE RÉUSSI' : 'CHALLENGE EN COURS'} title={complete ? 'Cinq découvertes. Un quartier plus vivant.' : `Encore ${5 - state.challengeProgress} découverte${5 - state.challengeProgress > 1 ? 's' : ''} pour réussir.`} />
       <motion.section className="celebration" initial={reduced ? false : { scale: 0.82, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={reduced ? { duration: 0 } : motionTransition.slow}>
-        <Icon name="star" /><strong>+150</strong><p>points locaux</p><b>Niveau Local Hero consolidé</b>
+        <Icon name="star" /><strong>+150</strong><p>{complete ? 'points locaux ajoutés' : 'points locaux à débloquer'}</p><b>{complete ? 'Challenge validé' : 'Termine les cinq découvertes'}</b>
       </motion.section>
-      <div className="merchant-mini"><img src={asset('challenge-photo.jpg')} alt="Commerces du centre-ville" /><div><strong>Centre-ville</strong><p>3 adresses découvertes</p></div></div>
+      <div className="merchant-mini"><img src={asset('challenge-photo.jpg')} alt="Commerces du centre-ville" /><div><strong>Centre-ville</strong><p>5 adresses découvertes</p></div></div>
       <div className="screen-spacer" />
-      <Button full onClick={() => navigate('/client/rewards')}>Découvrir la sélection</Button>
+      <Button full onClick={() => navigate(complete ? '/client/rewards' : '/client/daily')}>{complete ? 'Découvrir la sélection' : 'Continuer le challenge'}</Button>
       {shared && <p className="inline-success" role="status">Challenge partagé dans la démonstration.</p>}
       <Button full variant="ghost" onClick={() => setShared(true)}>Partager</Button>
     </AppShell>

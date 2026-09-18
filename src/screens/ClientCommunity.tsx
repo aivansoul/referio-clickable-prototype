@@ -51,11 +51,15 @@ export function ReviewSuccessScreen() {
   const { state } = useDemo()
   const navigate = useNavigate()
   const reduced = useReducedMotion()
+  const legendUnlocked = state.level === 'Légende locale'
+  const unlockedStamp = legendUnlocked ? 'legendeLocale' : 'localHero'
+  const unlockedLabel = legendUnlocked ? 'Légende locale' : 'Local Hero'
   return (
     <AppShell tone="forest">
-      <PageTitle eyebrow="AVIS PUBLIÉ" title="Ton expérience aide tout le quartier." body="Le timbre Local Hero vient d’être ajouté à ton profil." inverse />
+      <PageTitle eyebrow="AVIS PUBLIÉ" title="Ton expérience aide tout le quartier." body={`Le timbre ${unlockedLabel} est maintenant visible sur ton profil.`} inverse />
       <motion.section className="level-up" initial={reduced ? false : { opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} transition={reduced ? { duration: 0 } : motionTransition.slow}>
-        <StampBadge name="localHero" /><Badge variant="verified" /><p>NOUVEAU TIMBRE</p><h2>Local Hero</h2><strong>{state.level}</strong><small>{state.points.toLocaleString('fr-BE')} points locaux cumulés</small>
+        <img className="level-up__mascot" src={asset('mascot-welcome.png')} alt="Mascotte Referio célébrant le nouveau niveau" />
+        <StampBadge name={unlockedStamp} /><Badge variant="verified" /><p>{legendUnlocked ? 'NOUVEAU NIVEAU' : 'TIMBRE ACTIF'}</p><h2>{unlockedLabel}</h2><Badge variant="level">{state.level}</Badge><small>{state.points.toLocaleString('fr-BE')} points locaux cumulés</small>
       </motion.section>
       <div className="screen-spacer" />
       <Button full onClick={() => navigate('/client/rewards')}>Voir ma récompense</Button>
@@ -75,15 +79,15 @@ export function ProfileScreen() {
           <button className="theme-toggle" type="button" aria-pressed={dark} onClick={() => setDark(!dark)}>{dark ? 'Version claire' : 'Version sombre'}</button>
           <img className="profile-avatar" src={asset('profile-avatar.png')} alt="Portrait de Lana Totolina" />
           <h1>Lana Totolina</h1><p>Charleroi · Membre depuis 2026</p>
-          <Badge variant="level" />
+          <Badge variant="level">{state.level}</Badge>
           <PointsCard points={state.points} level={state.level} />
         </section>
         <section className="profile-dashboard">
           <div className="profile-stats"><div><strong>42</strong><span>commerces soutenus</span></div><div><strong>6</strong><span>quartiers explorés</span></div><div><strong>18</strong><span>amis inspirés</span></div></div>
           <SectionHeading title="Mes timbres" action="Voir les challenges" to="/client/challenges" />
-          <div className="profile-stamps"><StampBadge name="curieux" /><StampBadge name="explorateur" /><StampBadge name="insider" /><StampBadge name="localHero" locked={!state.badgeUnlocked} /><StampBadge name="legendeLocale" locked /><StampBadge name="premiereVisite" /><StampBadge name="avisVerifie" /><StampBadge name="serieLocale" /><StampBadge name="ambassadeur" locked /><StampBadge name="fideliteComplete" locked /></div>
+          <div className="profile-stamps"><StampBadge name="curieux" /><StampBadge name="explorateur" /><StampBadge name="insider" /><StampBadge name="localHero" locked={!state.badgeUnlocked} /><StampBadge name="legendeLocale" locked={state.level !== 'Légende locale'} /><StampBadge name="premiereVisite" locked={!state.visitVerified} /><StampBadge name="avisVerifie" locked={!state.reviewPublished} /><StampBadge name="serieLocale" locked={state.dailyDiscoveries.length < 3} /><StampBadge name="ambassadeur" locked={state.interested.length < 5} /><StampBadge name="fideliteComplete" locked={state.stamps < 6} /></div>
           <SectionHeading title="Ton impact local" />
-          <div className="impact-card"><div><strong>3 420 €</strong><span>orientés vers des commerces locaux</span><p>Estimation de démonstration, non financière.</p></div><img src={asset('mascot.png')} alt="Mascotte Referio" /></div>
+          <div className="impact-card"><div><strong>3 420 €</strong><span>orientés vers des commerces locaux</span><p>Estimation de démonstration, non financière.</p></div><img src={asset('mascot-discover.png')} alt="Mascotte Referio" /></div>
           <SectionHeading title="Dernières découvertes" action="Voir les favoris" to="/client/favorites" />
           <div className="discovery-grid">{['discovery-1.jpg', 'discovery-2.png', 'discovery-3.png', 'discovery-4.png'].map((image) => <img src={asset(image)} alt="Découverte locale" key={image} />)}</div>
           {shared && <p className="inline-success" role="status">Lien de profil copié pour la démonstration.</p>}
@@ -114,17 +118,44 @@ export function RankingScreen() {
 
 export function FavoritesScreen() {
   const { state } = useDemo()
-  const [created, setCreated] = useState(false)
+  const [creating, setCreating] = useState(false)
+  const [listName, setListName] = useState('Ma nouvelle liste')
+  const [lists, setLists] = useState<Array<{ name: string; image: string; kind: 'brunch' | 'gifts' | 'custom' }>>([
+    { name: 'Brunch du dimanche', image: 'review-photo.png', kind: 'brunch' },
+    { name: 'Idées cadeaux', image: 'review-merchant.png', kind: 'gifts' },
+  ])
   const [feedback, setFeedback] = useState('')
+  const favoriteMerchants = merchants.filter((merchant) => state.favorites.includes(merchant.id))
+
+  function countForList(kind: 'brunch' | 'gifts' | 'custom') {
+    if (kind === 'brunch') return favoriteMerchants.filter((merchant) => /café|boulangerie|restaurant/i.test(merchant.category)).length
+    if (kind === 'gifts') return favoriteMerchants.filter((merchant) => /beauté|shopping|fleuriste|artisanat|culture/i.test(merchant.category)).length
+    return 0
+  }
+
+  function createList() {
+    const name = listName.trim()
+    if (!name) return
+    setLists((current) => [...current, { name, image: 'collection-photo.jpg', kind: 'custom' }])
+    setCreating(false)
+    setFeedback(`La liste « ${name} » a été créée.`)
+    setListName('Ma nouvelle liste')
+  }
+
   return (
     <AppShell bottomNav>
-      <PageTitle eyebrow="TES LISTES" title="Tes pépites à garder sous le coude." body={`${state.favorites.length + 11} favoris enregistrés`} />
-      <div className="favorite-lists"><button type="button" onClick={() => setFeedback('Liste « Brunch du dimanche » ouverte.')}><img src={asset('review-photo.png')} alt="" /><strong>Brunch du dimanche</strong><span>6 adresses</span></button><button type="button" onClick={() => setFeedback('Liste « Idées cadeaux » ouverte.')}><img src={asset('review-merchant.png')} alt="" /><strong>Idées cadeaux</strong><span>9 adresses</span></button></div>
-      <Button full variant="ghost" onClick={() => setCreated(true)}>+ Nouvelle liste</Button>
-      {created && <div className="inline-form"><Field label="Nom de la liste" value="Ma nouvelle liste" /><Button onClick={() => { setCreated(false); setFeedback('La liste « Ma nouvelle liste » a été créée.') }}>Créer</Button></div>}
+      <PageTitle eyebrow="TES LISTES" title="Tes pépites à garder sous le coude." body={`${state.favorites.length} favori${state.favorites.length === 1 ? '' : 's'} enregistré${state.favorites.length === 1 ? '' : 's'}`} />
+      <div className="favorite-lists">{lists.map((list) => {
+        const count = countForList(list.kind)
+        return <button type="button" onClick={() => setFeedback(`Liste « ${list.name} » ouverte : ${count} adresse${count === 1 ? '' : 's'}.`)} key={list.name}><img src={asset(list.image)} alt="" /><strong>{list.name}</strong><span>{count} adresse{count === 1 ? '' : 's'}</span></button>
+      })}</div>
+      <Button full variant="ghost" onClick={() => setCreating(true)}>+ Nouvelle liste</Button>
+      {creating && <div className="inline-form favorite-list-form"><Field label="Nom de la liste" value={listName} onChange={setListName} /><div><Button variant="ghost" onClick={() => setCreating(false)}>Annuler</Button><Button disabled={!listName.trim()} onClick={createList}>Créer</Button></div></div>}
       {feedback && <p className="inline-success" role="status">{feedback}</p>}
       <SectionHeading title="Tous les favoris" />
-      {merchants.map((merchant) => <MerchantCard merchant={merchant} compact key={merchant.id} />)}
+      {favoriteMerchants.length > 0
+        ? favoriteMerchants.map((merchant) => <MerchantCard merchant={merchant} compact key={merchant.id} />)
+        : <div className="favorites-inline-empty"><img src={asset('mascot-favorites.png')} alt="Mascotte Referio avec une boîte vide" /><div><strong>Aucune pépite enregistrée</strong><p>Ajoute un cœur depuis une fiche ou le swipe quotidien.</p><Link className="button button--secondary" to="/client/daily">Découvrir les pépites</Link></div></div>}
     </AppShell>
   )
 }
@@ -160,7 +191,7 @@ export function OnboardingScreen({ step }: { step: 1 | 2 | 3 | 4 }) {
       {step === 1 && <><img className="onboarding-mascot onboarding-mascot--welcome" src={asset('mascot-welcome.png')} alt="Tête de la mascotte Referio" /><PageTitle eyebrow="REFERIO" title="Ta ville, tes pépites." body="Découvre les bonnes adresses grâce à celles et ceux qui les vivent." /><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Commencer</Button></>}
       {step === 2 && <><img className="onboarding-mascot" src={asset('mascot-discover.png')} alt="Mascotte Referio avec une loupe" /><PageTitle eyebrow="COMMENT ÇA MARCHE" title="Découvre les meilleurs commerces près de chez toi." /><div className="value-list"><p><b>Avis vérifiés</b><span>Associés à de vraies visites.</span></p><p><b>Points locaux</b><span>À chaque action utile.</span></p><p><b>Fidélité partagée</b><span>Entre les commerces du quartier.</span></p></div><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Suivant</Button></>}
       {step === 3 && <><PageTitle eyebrow="TA VILLE" title="Où explores-tu ?" body="La ville détermine les recommandations, la carte et le classement." /><div className="city-picker"><button className="is-selected" type="button" onClick={() => dispatch({ type: 'SET_CITY', city: 'Charleroi' })}><strong>Charleroi</strong><span>Ville pilote</span></button><button type="button" disabled><strong>Bruxelles</strong><span>Bientôt</span></button><button type="button" disabled><strong>Namur</strong><span>Bientôt</span></button></div><p className="selected-city">Ville active : {state.city}</p><div className="screen-spacer" /><Button full onClick={() => navigate(next)}>Continuer</Button></>}
-      {step === 4 && <><PageTitle eyebrow="TES GOÛTS" title="Qu’est-ce qui te fait vibrer ?" body="Choisis au moins trois catégories. Tu pourras les modifier plus tard." /><div className="interest-grid">{categories.slice(1).concat(['Culture', 'Bien-être', 'Artisanat', 'Sorties']).map((category) => <button type="button" key={category} className={selected.includes(category) ? 'is-selected' : ''} onClick={() => setSelected(selected.includes(category) ? selected.filter((item) => item !== category) : [...selected, category])}>{category}</button>)}</div><div className="screen-spacer" /><Button full disabled={selected.length < 3} onClick={() => navigate(next)}>C’est parti !</Button></>}
+      {step === 4 && <><PageTitle eyebrow="TES GOÛTS" title="Qu’est-ce qui te fait vibrer ?" body="Choisis au moins trois catégories. Tu pourras les modifier plus tard." /><div className="interest-grid">{categories.filter((category) => category !== 'Tout' && category !== 'Nouveau').map((category) => <button type="button" key={category} className={selected.includes(category) ? 'is-selected' : ''} onClick={() => setSelected(selected.includes(category) ? selected.filter((item) => item !== category) : [...selected, category])}>{category}</button>)}</div><div className="screen-spacer" /><Button full disabled={selected.length < 3} onClick={() => navigate(next)}>C’est parti !</Button></>}
     </AppShell>
   )
 }

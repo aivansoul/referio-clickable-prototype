@@ -13,8 +13,8 @@ export function LoginScreen() {
   return (
     <AppShell>
       <PageTitle eyebrow="BON RETOUR" title="Connecte-toi à ton quartier." body="Retrouve tes pépites, tes passeports et ta progression locale." />
-      <Field label="Adresse e-mail" value={email} onChange={setEmail} helper="Utilise une adresse de démonstration." />
-      <Field label="Mot de passe" value={password} onChange={setPassword} />
+      <Field label="Adresse e-mail" type="email" value={email} onChange={setEmail} helper="Utilise une adresse de démonstration." />
+      <Field label="Mot de passe" type="password" value={password} onChange={setPassword} />
       <Link className="text-link" to="/client/forgot-password">Mot de passe oublié&nbsp;?</Link>
       <div className="screen-spacer" />
       <Button full onClick={() => navigate('/client/home')}>Se connecter</Button>
@@ -25,29 +25,35 @@ export function LoginScreen() {
 
 export function SignupScreen() {
   const navigate = useNavigate()
+  const [firstName, setFirstName] = useState('Lana')
+  const [email, setEmail] = useState('lana@exemple.be')
+  const [password, setPassword] = useState('referio-demo')
+  const [accepted, setAccepted] = useState(true)
+  const canCreate = firstName.trim().length > 1 && email.includes('@') && password.length >= 8 && accepted
   return (
     <AppShell>
       <PageTitle eyebrow="BIENVENUE" title="Crée ton passeport local." body="Quelques informations suffisent pour commencer." />
-      <Field label="Prénom" value="Lana" />
-      <Field label="Adresse e-mail" value="lana@exemple.be" />
-      <Field label="Mot de passe" value="referio-demo" />
-      <label className="consent"><input type="checkbox" defaultChecked /> <span>J’accepte les conditions de démonstration et la politique de confidentialité.</span></label>
+      <Field label="Prénom" value={firstName} onChange={setFirstName} />
+      <Field label="Adresse e-mail" type="email" value={email} onChange={setEmail} />
+      <Field label="Mot de passe" type="password" value={password} onChange={setPassword} helper="8 caractères minimum." />
+      <label className="consent"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} /> <span>J’accepte les conditions de démonstration et la politique de confidentialité.</span></label>
       <div className="screen-spacer" />
-      <Button full onClick={() => navigate('/client/permissions/location')}>Créer mon compte</Button>
+      <Button full disabled={!canCreate} onClick={() => navigate('/client/permissions/location')}>Créer mon compte</Button>
     </AppShell>
   )
 }
 
 export function ForgotPasswordScreen() {
   const [sent, setSent] = useState(false)
+  const [email, setEmail] = useState('lana@exemple.be')
   return (
     <AppShell tone="info">
       <PageTitle eyebrow="RÉCUPÉRATION" title="On te renvoie le chemin." body="Saisis ton adresse et nous simulerons l’envoi d’un lien sécurisé." />
-      <Field label="Adresse e-mail" value="lana@exemple.be" />
+      <Field label="Adresse e-mail" type="email" value={email} onChange={(value) => { setEmail(value); setSent(false) }} />
       <div className="tip-card"><strong>Bon à savoir</strong><p>Le lien de démonstration expire après 20 minutes et ne quitte pas ton navigateur.</p></div>
       {sent && <p className="inline-success" role="status">Le lien simulé a été envoyé.</p>}
       <div className="screen-spacer" />
-      <Button full onClick={() => setSent(true)}>Envoyer le lien</Button>
+      <Button full disabled={!email.includes('@')} onClick={() => setSent(true)}>Envoyer le lien</Button>
       <Link className="button button--ghost button--full" to="/client/login">Retour à la connexion</Link>
     </AppShell>
   )

@@ -93,6 +93,7 @@ export function TopBar({ inverse = false }: { inverse?: boolean }) {
         referio.
       </Link>
       <div className="top-bar__actions">
+        <Link className="top-bar__business" to="/business/dashboard" aria-label="Ouvrir l’espace Business PME">PME</Link>
         <Link to="/client/search" aria-label="Rechercher"><Icon name="search" /></Link>
         <Link to="/client/notifications" aria-label="Ouvrir les notifications"><img src={asset('nav-notifications.png')} alt="" /></Link>
       </div>
@@ -167,7 +168,7 @@ export function MerchantCard({ merchant, compact = false }: { merchant: Merchant
       <div className="merchant-card__body">
         <div className="merchant-card__topline">
           <h3>{merchant.name}</h3>
-          <span className="merchant-card__verified" aria-label="Commerce vérifié"><Icon name="check" /></span>
+          {merchant.verified && <span className="merchant-card__verified" aria-label="Commerce vérifié"><Icon name="check" /></span>}
         </div>
         <p>{merchant.category} · {merchant.distance} · {merchant.district}</p>
         {!compact && <div className="merchant-card__social"><span className="merchant-card__avatars"><img src={`${import.meta.env.BASE_URL}assets/figma/rank-2.png`} alt="" /><img src={`${import.meta.env.BASE_URL}assets/figma/review-avatar.png`} alt="" /><img src={`${import.meta.env.BASE_URL}assets/figma/rank-3.png`} alt="" /><b>+15</b></span><span>Recommandé par {merchant.recommendedBy} personnes</span></div>}
@@ -210,7 +211,7 @@ export function SectionHeading({ title, action, to }: { title: string; action?: 
   )
 }
 
-export function Field({ label, value, placeholder, helper, multiline = false, onChange }: { label: string; value?: string; placeholder?: string; helper?: string; multiline?: boolean; onChange?: (value: string) => void }) {
+export function Field({ label, value, placeholder, helper, multiline = false, type = 'text', onChange }: { label: string; value?: string; placeholder?: string; helper?: string; multiline?: boolean; type?: 'text' | 'email' | 'password' | 'tel' | 'url' | 'date'; onChange?: (value: string) => void }) {
   const common = {
     value,
     placeholder,
@@ -220,7 +221,7 @@ export function Field({ label, value, placeholder, helper, multiline = false, on
   return (
     <label className="field">
       <span>{label}</span>
-      {multiline ? <textarea rows={5} {...common} /> : <input {...common} />}
+      {multiline ? <textarea rows={5} {...common} /> : <input type={type} {...common} />}
       {helper && <small>{helper}</small>}
     </label>
   )

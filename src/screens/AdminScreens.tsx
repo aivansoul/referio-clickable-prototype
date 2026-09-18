@@ -7,6 +7,25 @@ import { useDemo } from '../state/DemoContext'
 
 const asset = (name: string) => `${import.meta.env.BASE_URL}assets/figma/${name}`
 
+type CsvCell = string | number
+
+function normalizeSearch(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+}
+
+function downloadCsv(filename: string, headers: readonly CsvCell[], rows: readonly (readonly CsvCell[])[]) {
+  const escapeCell = (cell: CsvCell) => `"${String(cell).replace(/"/g, '""')}"`
+  const csv = `\uFEFF${[headers, ...rows].map((row) => row.map(escapeCell).join(',')).join('\r\n')}`
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 0)
+}
+
 const adminNav = [
   ['/admin/dashboard', 'Vue d’ensemble'],
   ['/admin/verifications', 'Vérifications'],
@@ -36,10 +55,15 @@ function AdminLayout({ title, eyebrow, subtitle, children, action }: { title: st
 
 export function AdminLoginScreen() {
   const navigate = useNavigate()
+  const [email, setEmail] = useState('admin@referio.example')
+  const [password, setPassword] = useState('referio-demo')
+  const [trustedDevice, setTrustedDevice] = useState(true)
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+  const canContinue = emailValid && password.length >= 8
   return (
     <DesktopShell area="admin">
       <section className="admin-login-art"><img src={asset('admin-login.jpg')} alt="Centre de contrôle Referio" /><div><span>R</span><h1>La confiance locale se protège.</h1><p>Console réservée aux équipes de vérification et de modération.</p></div></section>
-      <section className="admin-login-form"><div><p>ADMINISTRATION</p><h1>Connexion renforcée</h1><Field label="Adresse professionnelle" value="admin@referio.example" /><Field label="Mot de passe" value="referio-demo" /><label className="consent"><input type="checkbox" defaultChecked /> <span>Cet appareil est approuvé</span></label><Button full onClick={() => navigate('/admin/dashboard')}>Continuer avec la 2FA</Button><small>Accès simulé · Aucun compte réel</small></div></section>
+      <section className="admin-login-form"><div><p>ADMINISTRATION</p><h1>Connexion renforcée</h1><Field label="Adresse professionnelle" type="email" value={email} onChange={setEmail} helper={email && !emailValid ? 'Saisissez une adresse professionnelle valide.' : undefined} /><Field label="Mot de passe" type="password" value={password} onChange={setPassword} helper={password && password.length < 8 ? '8 caractères minimum.' : undefined} /><label className="consent"><input type="checkbox" checked={trustedDevice} onChange={(event) => setTrustedDevice(event.target.checked)} /> <span>Cet appareil est approuvé</span></label><Button full disabled={!canContinue} onClick={() => canContinue && navigate('/admin/dashboard')}>Continuer avec la 2FA</Button><small>Accès simulé · Aucun compte réel</small></div></section>
     </DesktopShell>
   )
 }
@@ -69,13 +93,17 @@ const verificationRows = [
 export function AdminVerificationsScreen() {
   const [selected, setSelected] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
+  const [query, setQuery] = useState('')
+  const [notes, setNotes] = useState<Record<string, string>>({})
   const { dispatch } = useDemo()
+  const normalizedQuery = normalizeSearch(query)
+  const filteredRows = verificationRows.filter((row) => normalizeSearch(row.join(' ')).includes(normalizedQuery))
   function decide(decision: string) { setStatus(decision); if (decision === 'validé') dispatch({ type: 'VALIDATE_BUSINESS' }) }
   return (
     <AdminLayout title="Vérifications Business" subtitle="18 commerces attendent une décision documentée">
-      <div className="admin-toolbar admin-verification-toolbar"><Field label="Rechercher" value="Nom, BCE ou ville" /><Button className="verification-export" variant="ghost" onClick={() => window.print()}>Exporter</Button></div>
-      <div className="verification-list" role="table"><div className="verification-list__head" role="row"><span>COMMERCE</span><span>DOSSIER</span><span>RISQUE</span><span>ACTION</span></div>{verificationRows.map(([name, meta, dossier, risk]) => <button type="button" role="row" className="verification-row" key={name} onClick={() => { setSelected(name); setStatus(null) }}><span><strong>{name}</strong><small>{meta}</small></span><span className={`dossier dossier--${dossier.toLowerCase()}`}>{dossier}</span><span className={`risk risk--${risk.toLowerCase()}`}>{risk}</span><span>Ouvrir</span></button>)}</div>
-      {selected && <div className="admin-drawer" role="dialog" aria-modal="true" aria-label={`Dossier ${selected}`}><button className="drawer-close" onClick={() => setSelected(null)} aria-label="Fermer">×</button><span>DOSSIER DE VÉRIFICATION</span><h2>{selected}</h2><StateCard label="PREUVES REÇUES" title="BCE, identité et adresse" body="Les informations concordent avec le profil public." />{status ? <p className="inline-success">Dossier {status}.</p> : <><Field label="Note interne" multiline placeholder="Motif de la décision…" /><div className="two-actions"><Button onClick={() => decide('validé')}>Valider</Button><Button variant="danger" onClick={() => decide('rejeté')}>Rejeter</Button></div></>}</div>}
+      <div className="admin-toolbar admin-verification-toolbar"><Field label="Rechercher" value={query} placeholder="Nom, BCE ou ville" onChange={setQuery} /><Button className="verification-export" variant="ghost" onClick={() => downloadCsv('referio-verifications.csv', ['Commerce', 'BCE et ville', 'Dossier', 'Risque'], filteredRows)}>Exporter CSV</Button></div>
+      {filteredRows.length > 0 ? <div className="verification-list" role="table"><div className="verification-list__head" role="row"><span>COMMERCE</span><span>DOSSIER</span><span>RISQUE</span><span>ACTION</span></div>{filteredRows.map(([name, meta, dossier, risk]) => <button type="button" role="row" className="verification-row" key={name} onClick={() => { setSelected(name); setStatus(null) }}><span><strong>{name}</strong><small>{meta}</small></span><span className={`dossier dossier--${dossier.toLowerCase()}`}>{dossier}</span><span className={`risk risk--${risk.toLowerCase()}`}>{risk}</span><span>Ouvrir</span></button>)}</div> : <StateCard tone="info" label="AUCUN RÉSULTAT" title="Aucun dossier correspondant" body="Modifiez le nom, le numéro BCE ou la ville recherchée." />}
+      {selected && <div className="admin-drawer" role="dialog" aria-modal="true" aria-label={`Dossier ${selected}`}><button className="drawer-close" onClick={() => setSelected(null)} aria-label="Fermer">×</button><span>DOSSIER DE VÉRIFICATION</span><h2>{selected}</h2><StateCard label="PREUVES REÇUES" title="BCE, identité et adresse" body="Les informations concordent avec le profil public." />{status ? <p className="inline-success" role="status">Dossier {status}.{notes[selected]?.trim() ? ' Note interne enregistrée.' : ''}</p> : <><Field label="Note interne" multiline value={notes[selected] ?? ''} placeholder="Motif de la décision…" onChange={(value) => setNotes((current) => ({ ...current, [selected]: value }))} /><div className="two-actions"><Button onClick={() => decide('validé')}>Valider</Button><Button variant="danger" onClick={() => decide('rejeté')}>Rejeter</Button></div></>}</div>}
     </AdminLayout>
   )
 }
@@ -84,7 +112,9 @@ export function AdminModerationScreen() {
   const [decision, setDecision] = useState<string | null>(null)
   const [selectedReport, setSelectedReport] = useState(0)
   const reports = ['Contenu commercial', 'Expérience contestée', 'Langage inapproprié']
-  return <AdminLayout eyebrow="7 SIGNALEMENTS" title="Modération des avis"><div className="moderation-grid"><section className="admin-panel"><h2>Signalements</h2>{reports.map((item, index) => <button type="button" className={index === selectedReport ? 'is-selected' : ''} aria-pressed={index === selectedReport} onClick={() => { setSelectedReport(index); setDecision(null) }} key={item}><strong>{item}</strong><small>Café Central · il y a {index + 1} h</small></button>)}</section><section className="admin-panel moderation-detail"><span>{reports[selectedReport].toUpperCase()}</span><h2>« Une publicité déguisée, rien de plus. »</h2><p>Publié par un compte avec visite vérifiée. Le commerce conteste le caractère authentique du contenu.</p><StateCard label="PREUVE DE VISITE" title="QR validé · 18 septembre, 10:42" body="Aucun autre signal de fraude associé au compte." /><Field label="Note interne" multiline value="La preuve de visite est valide. Le texte ne viole pas les règles." />{decision ? <p className="inline-success" role="status">Décision enregistrée : {decision}.</p> : <div className="two-actions"><Button onClick={() => setDecision('avis conservé')}>Conserver</Button><Button variant="danger" onClick={() => setDecision('avis retiré')}>Retirer</Button></div>}</section></div></AdminLayout>
+  const [notes, setNotes] = useState<Record<string, string>>({ 'Contenu commercial': 'La preuve de visite est valide. Le texte ne viole pas les règles.' })
+  const report = reports[selectedReport]
+  return <AdminLayout eyebrow="7 SIGNALEMENTS" title="Modération des avis"><div className="moderation-grid"><section className="admin-panel"><h2>Signalements</h2>{reports.map((item, index) => <button type="button" className={index === selectedReport ? 'is-selected' : ''} aria-pressed={index === selectedReport} onClick={() => { setSelectedReport(index); setDecision(null) }} key={item}><strong>{item}</strong><small>Café Central · il y a {index + 1} h</small></button>)}</section><section className="admin-panel moderation-detail"><span>{report.toUpperCase()}</span><h2>« Une publicité déguisée, rien de plus. »</h2><p>Publié par un compte avec visite vérifiée. Le commerce conteste le caractère authentique du contenu.</p><StateCard label="PREUVE DE VISITE" title="QR validé · 18 septembre, 10:42" body="Aucun autre signal de fraude associé au compte." /><Field label="Note interne" multiline value={notes[report] ?? ''} placeholder="Ajouter le motif de la décision…" onChange={(value) => setNotes((current) => ({ ...current, [report]: value }))} />{decision ? <p className="inline-success" role="status">Décision enregistrée : {decision}.</p> : <div className="two-actions"><Button onClick={() => setDecision('avis conservé')}>Conserver</Button><Button variant="danger" onClick={() => setDecision('avis retiré')}>Retirer</Button></div>}</section></div></AdminLayout>
 }
 
 export function AdminAppealsScreen() {
@@ -94,15 +124,94 @@ export function AdminAppealsScreen() {
   return <AdminLayout eyebrow="3 DOSSIERS" title="Appels"><div className="appeal-layout"><section className="admin-panel">{appeals.map((name, index) => <button type="button" className={name === selectedAppeal ? 'is-selected' : ''} aria-pressed={name === selectedAppeal} onClick={() => { setSelectedAppeal(name); setStep(1) }} key={name}><strong>{name}</strong><small>SLA · {12 + index * 4} h restantes</small></button>)}</section><section className="admin-panel"><span>RELECTURE EN 4 ÉTAPES</span><h2>{selectedAppeal}</h2><div className="stepper">{['Décision initiale', 'Nouvelles pièces', 'Seconde lecture', 'Décision finale'].map((label, index) => <button type="button" onClick={() => setStep(index + 1)} className={step >= index + 1 ? 'is-active' : ''} key={label}><i>{index + 1}</i><span>{label}</span></button>)}</div><StateCard tone="info" label={`ÉTAPE ${step}`} title="Dossier en cours de relecture" body="Toutes les actions sont historisées dans le journal d’audit." /><Button onClick={() => setStep(Math.min(4, step + 1))}>Étape suivante</Button></section></div></AdminLayout>
 }
 
-export function AdminUsersScreen() {
-  const [invited, setInvited] = useState(false)
-  const users = [['Omer B.', 'Super admin', 'Actif'], ['Léa B.', 'Vérification', 'Actif'], ['Nora D.', 'Modération', 'Invitation'], ['Samir K.', 'Lecture', 'Inactif']]
-  return <AdminLayout eyebrow="ÉQUIPE" title="Utilisateurs & rôles" action={<Button onClick={() => setInvited(true)}>Inviter</Button>}><div className="admin-toolbar"><Field label="Recherche" placeholder="Nom ou rôle…" /></div><div className="user-grid">{users.map(([name, role, state]) => <article key={name}><span>{name.split(' ').map((part) => part[0]).join('')}</span><div><strong>{name}</strong><small>{role}</small></div><b>{state}</b><Button variant="ghost" onClick={() => setInvited(true)}>Gérer</Button></article>)}</div>{invited && <div className="admin-drawer" role="dialog" aria-modal="true" aria-label="Gestion d’un membre"><button className="drawer-close" onClick={() => setInvited(false)} aria-label="Fermer">×</button><h2>Gérer l’accès</h2><Field label="Adresse professionnelle" value="nouveau@referio.example" /><Field label="Groupe de permissions" value="Vérification" /><Button full onClick={() => setInvited(false)}>Enregistrer</Button></div>}</AdminLayout>
+type AdminUser = {
+  name: string
+  email: string
+  role: string
+  state: string
 }
 
+type UserEditor = {
+  mode: 'invite' | 'manage'
+  originalEmail?: string
+  name: string
+  email: string
+  role: string
+}
+
+const initialAdminUsers: AdminUser[] = [
+  { name: 'Omer B.', email: 'omer@referio.example', role: 'Super admin', state: 'Actif' },
+  { name: 'Léa B.', email: 'lea@referio.example', role: 'Vérification', state: 'Actif' },
+  { name: 'Nora D.', email: 'nora@referio.example', role: 'Modération', state: 'Invitation' },
+  { name: 'Samir K.', email: 'samir@referio.example', role: 'Lecture', state: 'Inactif' },
+]
+
+export function AdminUsersScreen() {
+  const [users, setUsers] = useState(initialAdminUsers)
+  const [query, setQuery] = useState('')
+  const [editor, setEditor] = useState<UserEditor | null>(null)
+  const [feedback, setFeedback] = useState('')
+  const normalizedQuery = normalizeSearch(query)
+  const filteredUsers = users.filter((user) => normalizeSearch(`${user.name} ${user.email} ${user.role} ${user.state}`).includes(normalizedQuery))
+  const editorEmailValid = Boolean(editor && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(editor.email))
+  const editorEmailAvailable = Boolean(editor && !users.some((user) => user.email.toLowerCase() === editor.email.toLowerCase() && user.email !== editor.originalEmail))
+  const canSave = Boolean(editor?.name.trim() && editor.role.trim() && editorEmailValid && editorEmailAvailable)
+
+  function openInvitation() {
+    setFeedback('')
+    setEditor({ mode: 'invite', name: '', email: '', role: 'Vérification' })
+  }
+
+  function openManagement(user: AdminUser) {
+    setFeedback('')
+    setEditor({ mode: 'manage', originalEmail: user.email, name: user.name, email: user.email, role: user.role })
+  }
+
+  function saveUser() {
+    if (!editor || !canSave) return
+    if (editor.mode === 'invite') {
+      setUsers((current) => [...current, { name: editor.name.trim(), email: editor.email.trim(), role: editor.role.trim(), state: 'Invitation' }])
+      setFeedback(`Invitation envoyée à ${editor.email.trim()}.`)
+    } else {
+      setUsers((current) => current.map((user) => user.email === editor.originalEmail ? { ...user, name: editor.name.trim(), email: editor.email.trim(), role: editor.role.trim() } : user))
+      setFeedback(`Accès de ${editor.name.trim()} mis à jour.`)
+    }
+    setEditor(null)
+  }
+
+  return (
+    <AdminLayout eyebrow="ÉQUIPE" title="Utilisateurs & rôles" action={<Button onClick={openInvitation}>Inviter</Button>}>
+      <div className="admin-toolbar"><Field label="Recherche" value={query} placeholder="Nom, e-mail ou rôle…" onChange={setQuery} /></div>
+      {feedback && <p className="inline-success" role="status">{feedback}</p>}
+      {filteredUsers.length > 0 ? <div className="user-grid">{filteredUsers.map((user) => <article key={user.email}><span>{user.name.split(' ').map((part) => part[0]).join('')}</span><div><strong>{user.name}</strong><small>{user.role}</small></div><b>{user.state}</b><Button variant="ghost" onClick={() => openManagement(user)}>Gérer</Button></article>)}</div> : <StateCard tone="info" label="AUCUN RÉSULTAT" title="Aucun utilisateur correspondant" body="Recherchez un nom, une adresse e-mail, un rôle ou un statut." />}
+      {editor && <div className="admin-drawer" role="dialog" aria-modal="true" aria-label="Gestion d’un membre"><button className="drawer-close" onClick={() => setEditor(null)} aria-label="Fermer">×</button><h2>{editor.mode === 'invite' ? 'Inviter un membre' : `Gérer ${editor.name}`}</h2><Field label="Nom complet" value={editor.name} onChange={(name) => setEditor((current) => current ? { ...current, name } : current)} /><Field label="Adresse professionnelle" type="email" value={editor.email} onChange={(email) => setEditor((current) => current ? { ...current, email } : current)} helper={editor.email && !editorEmailValid ? 'Saisissez une adresse professionnelle valide.' : !editorEmailAvailable ? 'Cette adresse est déjà utilisée.' : undefined} /><Field label="Groupe de permissions" value={editor.role} onChange={(role) => setEditor((current) => current ? { ...current, role } : current)} /><Button full disabled={!canSave} onClick={saveUser}>{editor.mode === 'invite' ? 'Envoyer l’invitation' : 'Enregistrer'}</Button></div>}
+    </AdminLayout>
+  )
+}
+
+const auditLogs = [
+  ['10:42:18', 'Omer B.', 'VALIDATE_BUSINESS', 'Café Moka', 'Succès'],
+  ['10:28:03', 'Léa B.', 'KEEP_REVIEW', 'Avis #4821', 'Succès'],
+  ['09:58:44', 'Système', 'BLOCK_QR', 'Moka Corner', 'Auto'],
+  ['09:31:12', 'Omer B.', 'UPDATE_ROLE', 'Nora D.', 'Succès'],
+  ['08:47:55', 'Système', 'RISK_ALERT', 'Compte #782', 'Ouvert'],
+]
+
 export function AdminAuditScreen() {
-  const logs = [['10:42:18', 'Omer B.', 'VALIDATE_BUSINESS', 'Café Moka', 'Succès'], ['10:28:03', 'Léa B.', 'KEEP_REVIEW', 'Avis #4821', 'Succès'], ['09:58:44', 'Système', 'BLOCK_QR', 'Moka Corner', 'Auto'], ['09:31:12', 'Omer B.', 'UPDATE_ROLE', 'Nora D.', 'Succès'], ['08:47:55', 'Système', 'RISK_ALERT', 'Compte #782', 'Ouvert']]
-  return <AdminLayout eyebrow="TRAÇABILITÉ" title="Journal d’audit" action={<Button variant="ghost" onClick={() => window.print()}>Exporter CSV</Button>}><div className="admin-toolbar"><Field label="Recherche" placeholder="Acteur, action ou cible…" /><div className="chip-row"><Chip active>Aujourd’hui</Chip><Chip>Succès</Chip><Chip>Alertes</Chip></div></div><div className="audit-table">{logs.map((row) => <div key={row.join('-')}>{row.map((cell, index) => index === 2 ? <code key={cell}>{cell}</code> : <span key={cell}>{cell}</span>)}</div>)}</div></AdminLayout>
+  const [query, setQuery] = useState('')
+  const [filter, setFilter] = useState<'today' | 'success' | 'alerts'>('today')
+  const normalizedQuery = normalizeSearch(query)
+  const filteredLogs = auditLogs.filter((row) => {
+    const matchesQuery = normalizeSearch(row.join(' ')).includes(normalizedQuery)
+    const matchesFilter = filter === 'today' || (filter === 'success' ? row[4] === 'Succès' : row[2] === 'BLOCK_QR' || row[2] === 'RISK_ALERT')
+    return matchesQuery && matchesFilter
+  })
+  return (
+    <AdminLayout eyebrow="TRAÇABILITÉ" title="Journal d’audit" action={<Button variant="ghost" onClick={() => downloadCsv('referio-journal-audit.csv', ['Heure', 'Acteur', 'Action', 'Cible', 'Statut'], filteredLogs)}>Exporter CSV</Button>}>
+      <div className="admin-toolbar"><Field label="Recherche" value={query} placeholder="Acteur, action ou cible…" onChange={setQuery} /><div className="chip-row"><Chip active={filter === 'today'} onClick={() => setFilter('today')}>Aujourd’hui</Chip><Chip active={filter === 'success'} onClick={() => setFilter('success')}>Succès</Chip><Chip active={filter === 'alerts'} onClick={() => setFilter('alerts')}>Alertes</Chip></div></div>
+      {filteredLogs.length > 0 ? <div className="audit-table">{filteredLogs.map((row) => <div key={row.join('-')}>{row.map((cell, index) => index === 2 ? <code key={cell}>{cell}</code> : <span key={cell}>{cell}</span>)}</div>)}</div> : <StateCard tone="info" label="AUCUN RÉSULTAT" title="Aucune action correspondante" body="Modifiez la recherche ou choisissez un autre filtre." />}
+    </AdminLayout>
+  )
 }
 
 export function AdminSystemScreen() {

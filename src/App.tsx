@@ -99,7 +99,7 @@ export default function App() {
             transition={reduced ? motionTransition.fast : motionTransition.base}
           >
             <Routes location={location}>
-        <Route path="/" element={<Navigate to="/splash" replace />} />
+        <Route path="/" element={<Navigate to="/hub" replace />} />
         <Route path="/splash" element={<SplashScreen />} />
         <Route path="/onboarding/1" element={<OnboardingScreen step={1} />} />
         <Route path="/onboarding/2" element={<OnboardingScreen step={2} />} />

@@ -80,12 +80,16 @@ All runtime assets are versioned locally in `public/assets/figma`; there are no 
 
 The correction pass also integrates the visual language that was previously absent from the clickable experience:
 
-- the official mascot, plus the welcome, discovery, favorites, network and location state variants;
+- the official mascot on the public gateway, Client home, daily swipe, completion and recovery states, plus the welcome, discovery, favorites, network and location variants;
 - nine exported SVG interface icons: search, close, check, chevron, map pin, scan, star, heart and settings;
 - the four official Badge component variants (reward, verified, new and level);
 - all ten official stamp crops, including Curieux, Explorateur, Insider, Local Hero, Légende locale, Première visite, Avis vérifié, Série locale, Ambassadeur and Fidélité complète;
-- the official bottom-navigation and notification assets, plus the food, café, bakery and beauty category assets;
+- the official bottom-navigation and notification assets;
+- all twelve Figma category references: food, café, bakery, beauty, hair salon, shopping, wellness, florist, garage, culture, leisure and craft;
+- all eleven Figma gamification references: points, badge, streak, reward, challenge, verified, community, crown, coupon, loyalty and progression;
 - the seven Figma reference boards for navigation/actions, categories, gamification, stamps, the verified-visit sequence, onboarding mascots and mascot states. These boards are exposed in `#/design-system` for implementation comparison; the interactive product continues to use semantic components and individual local assets rather than screenshot hotspots.
+
+The asset manifest now inventories all 125 files under `public/assets/figma`. The nineteen category and gamification additions are lossless crops from the original Figma boards; their exact source rectangles, output sizes and parity checks are recorded in [`asset-crop-map.md`](asset-crop-map.md).
 
 `business-qr.svg` was confirmed to be a checkmark layer, so the Business QR screen uses a deterministic real SVG QR instead of misrepresenting it as a QR matrix.
 
