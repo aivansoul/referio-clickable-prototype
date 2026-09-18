@@ -1,0 +1,15 @@
+{
+  "source": "Figma Referio — Prototype",
+  "policy": "Exact exports are kept local; no temporary Figma URLs are used at runtime.",
+  "groups": {
+    "brand": ["brand-mark.svg", "brand-texture.jpg", "mascot.png"],
+    "client-home": ["home-pepite-1.png", "home-pepite-2.png", "home-pepite-3.png", "home-pepite-4.png", "home-cafe-central.jpg", "topbar-actions.svg", "discover-action.svg"],
+    "discovery-map": ["pepite-1.png", "pepite-2.png", "pepite-selected.png", "discovery-card.jpg", "map-background.png", "map-merchant.png", "map-pin.svg", "map-pin-selected.svg", "map-pin-cluster.svg"],
+    "commerce-review": ["cafe-central-hero.jpg", "qr-camera.jpg", "review-avatar.png", "review-merchant.png", "review-photo.png"],
+    "profile-community": ["profile-avatar.png", "discovery-1.jpg", "discovery-2.png", "discovery-3.png", "discovery-4.png", "rank-1.png", "rank-2.png", "rank-3.png", "rank-lana.png", "podium.svg"],
+    "progress-rewards": ["challenge-photo.jpg", "reward-catalog-1.jpg", "reward-catalog-2.jpg", "reward-catalog-3.jpg", "reward-photo.jpg", "redemption-code.jpg", "collection-photo.jpg", "stamps.svg", "star.svg"],
+    "onboarding-states": ["permission-location.jpg", "permission-notifications.jpg", "onboarding-city.jpg", "onboarding-value.jpg", "notification-points.svg", "notification-social.svg"],
+    "business": ["business-asset-1.jpg", "business-asset-2.jpg", "business-asset-3.jpg", "business-asset-4.jpg", "business-asset-5.jpg", "business-asset-6.jpg", "business-icon.svg", "switch-on.svg", "switch-off.svg"],
+    "admin": ["admin-login.jpg"]
+  }
+}
